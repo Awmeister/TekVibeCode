@@ -1,1 +1,620 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demokrati til Diktatur - Simulation</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(90deg, #2c3e50, #34495e);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .simulation-area {
+            padding: 30px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        .phase-panel {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .phase-title {
+            font-size: 1.8rem;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        
+        .phase-description {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        
+        .external-factors {
+            background: #e8f4fc;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .external-factors h3 {
+            color: #2980b9;
+            margin-bottom: 10px;
+        }
+        
+        .symbol {
+            text-align: center;
+            margin: 25px 0;
+            font-size: 8rem;
+            transition: all 0.5s ease;
+        }
+        
+        .symbol.democracy {
+            color: #3498db;
+            text-shadow: 0 0 10px rgba(52, 152, 219, 0.7);
+        }
+        
+        .symbol.polarization {
+            color: #9b59b6;
+            text-shadow: 0 0 10px rgba(155, 89, 182, 0.7);
+        }
+        
+        .symbol.erosion-early {
+            color: #3498db;
+            text-shadow: 0 0 10px rgba(52, 152, 219, 0.7);
+        }
+        
+        .symbol.erosion-late {
+            color: #f39c12;
+            text-shadow: 0 0 10px rgba(243, 156, 18, 0.7);
+        }
+        
+        .symbol.authoritarian {
+            color: #e74c3c;
+            text-shadow: 0 0 10px rgba(231, 76, 60, 0.7);
+        }
+        
+        .symbol.consolidation {
+            color: #c0392b;
+            text-shadow: 0 0 10px rgba(192, 57, 43, 0.7);
+        }
+        
+        .symbol.totalitarian {
+            color: #8e44ad;
+            text-shadow: 0 0 10px rgba(142, 68, 173, 0.7);
+        }
+        
+        .symbol.collapse-early {
+            color: #7f8c8d;
+            text-shadow: 0 0 10px rgba(127, 140, 141, 0.7);
+        }
+        
+        .symbol.collapse-full {
+            color: #2c3e50;
+            text-shadow: 0 0 10px rgba(44, 62, 80, 0.7);
+        }
+        
+        .narratives {
+            background: #fef9e7;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .narratives h3 {
+            color: #d68910;
+            margin-bottom: 15px;
+        }
+        
+        .narrative {
+            margin-bottom: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .narrative .citizen {
+            font-weight: bold;
+            color: #16a085;
+        }
+        
+        .stats-panel {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 30px;
+        }
+        
+        .key-metrics {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .metric {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .metric-label {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+        
+        .controls {
+            text-align: center;
+            padding: 30px;
+            background: #ecf0f1;
+        }
+        
+        .phase-indicator {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .phase-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #bdc3c7;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .phase-dot.active {
+            background: #3498db;
+            transform: scale(1.3);
+        }
+        
+        .phase-dot.completed {
+            background: #2ecc71;
+        }
+        
+        button {
+            background: linear-gradient(90deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+        }
+        
+        button:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .warning {
+            background: #fadbd8;
+            border-left: 4px solid #e74c3c;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+            display: none;
+        }
+        
+        @media (max-width: 900px) {
+            .simulation-area {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Demokrati til Diktatur</h1>
+            <p class="subtitle">En detaljeret simulation af institutionel forfald og dets konsekvenser</p>
+        </header>
+        
+        <div class="simulation-area">
+            <div class="phase-panel">
+                <h2 class="phase-title" id="phase-title">Fase 1: Demokratisk Periode</h2>
+                <p class="phase-description" id="phase-description">
+                    Landet fungerer som et stabilt demokrati med frie valg, uafhængige domstole og aktivt civilsamfund.
+                </p>
+                
+                <div class="external-factors">
+                    <h3>Eksterne faktorer</h3>
+                    <p id="external-factors-text">
+                        Stærke internationale alliancer, økonomisk vækst og stabilitet i regionen.
+                    </p>
+                </div>
+                
+                <div class="symbol democracy" id="symbol">🏛️</div>
+                
+                <div class="narratives">
+                    <h3>Borgeres beretninger</h3>
+                    <div id="narratives-container">
+                        <div class="narrative">
+                            <p><span class="citizen">Lærer, 42 år:</span> "Jeg kan undervise frit uden frygt for censur. Mine elever lærer kritisk tænkning."</p>
+                        </div>
+                        <div class="narrative">
+                            <p><span class="citizen">Forretningsmand, 38 år:</span> "Retssystemet er forudsigeligt. Jeg kan investere med tillid til at mine rettigheder bliver beskyttet."</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stats-panel">
+                <h2 class="phase-title">Samfundsindikatorer</h2>
+                
+                <div class="chart-container">
+                    <canvas id="statsChart"></canvas>
+                </div>
+                
+                <div class="key-metrics">
+                    <div class="metric">
+                        <div class="metric-value" id="democracy-value">100</div>
+                        <div class="metric-label">Demokrati-index</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value" id="rights-value">100</div>
+                        <div class="metric-label">Menneskerettigheder</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value" id="economy-value">85</div>
+                        <div class="metric-label">Økonomisk stabilitet</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value" id="fear-value">5</div>
+                        <div class="metric-label">Borgeres frygt</div>
+                    </div>
+                </div>
+                
+                <div class="warning" id="warning-message">
+                    <strong>ADVARSEL:</strong> <span id="warning-text"></span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <div class="phase-indicator">
+                <div class="phase-dot active" id="dot-1"></div>
+                <div class="phase-dot" id="dot-2"></div>
+                <div class="phase-dot" id="dot-3"></div>
+                <div class="phase-dot" id="dot-4"></div>
+                <div class="phase-dot" id="dot-5"></div>
+                <div class="phase-dot" id="dot-6"></div>
+                <div class="phase-dot" id="dot-7"></div>
+                <div class="phase-dot" id="dot-8"></div>
+            </div>
+            
+            <button id="next-phase" onclick="advancePhase()">Næste fase</button>
+        </div>
+    </div>
 
+    <script>
+        // Simulation data med 8 faser
+        const phases = [
+            {
+                title: "Fase 1: Demokratisk Periode",
+                description: "Landet fungerer som et stabilt demokrati med frie valg, uafhængige domstole og aktivt civilsamfund.",
+                externalFactors: "Stærke internationale alliancer, økonomisk vækst og stabilitet i regionen.",
+                symbol: "🏛️",
+                symbolClass: "democracy",
+                narratives: [
+                    { citizen: "Lærer, 42 år", text: "Jeg kan undervise frit uden frygt for censur. Mine elever lærer kritisk tænkning." },
+                    { citizen: "Forretningsmand, 38 år", text: "Retssystemet er forudsigeligt. Jeg kan investere med tillid til at mine rettigheder bliver beskyttet." }
+                ],
+                stats: { democracy: 100, rights: 100, economy: 85, fear: 5 },
+                warning: null
+            },
+            {
+                title: "Fase 2: Begyndende Polarisation",
+                description: "En karismatisk leder vinder valg med populistiske løfter. Samfundet begynder at polarisere mellem tilhængere og modstandere.",
+                externalFactors: "Internationale medier bemærker den politiske polarisering, men ser det som normal demokratisk udvikling.",
+                symbol: "⚖️",
+                symbolClass: "polarization",
+                narratives: [
+                    { citizen: "Journalist, 35 år", text: "Debatten bliver mere aggressiv. Mine kolleger får trusler for at være 'for kritiske' over for regeringen." },
+                    { citizen: "Universitetsstuderende, 22 år", text: "På campus er der nu klare lejre. Nogle studerende kalder os 'forrædere' hvis vi stiller spørgsmål." }
+                ],
+                stats: { democracy: 90, rights: 95, economy: 80, fear: 15 },
+                warning: "Sociologer advarer om stigende politisk polarisering og normalisering af hadefuldt sprogbrug."
+            },
+            {
+                title: "Fase 3: Tidlig Institutionel Erosion",
+                description: "Regeringen begynder at udskifte nøglepersoner i statsadministrationen og retsvæsenet med loyale støtter.",
+                externalFactors: "EU udtrykker let bekymring over udnævnelser i retsvæsenet, men tager ikke konkrete skridt.",
+                symbol: "🏛️",
+                symbolClass: "erosion-early",
+                narratives: [
+                    { citizen: "Embedsmand, 48 år", text: "Min chef blev pludselig fyret og erstattet af en uden erfaring. Vi bliver presset til at følge regeringens linje." },
+                    { citizen: "Dommer, 55 år", text: "Regeringen har begyndt at udpege dommere med politisk baggrund. Min uafhængighed føles truet." }
+                ],
+                stats: { democracy: 75, rights: 80, economy: 75, fear: 25 },
+                warning: "Transparency International rapporterer om stigende politisk indblanding i uafhængige institutioner."
+            },
+            {
+                title: "Fase 4: Sen Institutionel Erosion",
+                description: "Medielovgivning strammes, og flere uafhængige medier lukkes eller overtages af regeringstilhængere.",
+                externalFactors: "Internationale presseorganisationer protesterer, men regeringen ignorerer kritikken og beskylder dem for indblanding.",
+                symbol: "📺",
+                symbolClass: "erosion-late",
+                narratives: [
+                    { citizen: "Tv-vært, 41 år", text: "Min station fik bøder for 'upassende' indhold. Nu er vi nødt til at selv-censurere for at overleve." },
+                    { citizen: "Bibliotekar, 36 år", text: "Bøger fra kritiske forfattere forsvinder fra hylderne. Vi får ikke officielle ordrer, men alle ved hvorfor." }
+                ],
+                stats: { democracy: 60, rights: 65, economy: 70, fear: 40 },
+                warning: "Reportere uden Grænser nedgraderer landets pressefrihed markant. Flere journalister forlader landet."
+            },
+            {
+                title: "Fase 5: Etablering af Autoritært Styre",
+                description: "Lederen erklærer undtagelsestilstand efter en iscenesattet sikkerhedskrise. Oppositionspartier forbydes.",
+                externalFactors: "FN fordømmer udviklingen, men Sikkerhedsrådet er splittet. Nabolande udtrykker bekymring uden at handle.",
+                symbol: "🚫",
+                symbolClass: "authoritarian",
+                narratives: [
+                    { citizen: "Tidligere politiker, 52 år", text: "Mit parti blev forbudt i nat. Mange af mine kolleger er allerede anholdt. Jeg gemmer mig hos venner." },
+                    { citizen: "Pensioneret officer, 65 år", text: "Hæren er blevet politiseret. Loyalitet til lederen er nu vigtigere end loyalitet til forfatningen." }
+                ],
+                stats: { democracy: 35, rights: 30, economy: 60, fear: 65 },
+                warning: "Amnesty International rapporterer om masseanholdelser af oppositionspolitikere og aktivister."
+            },
+            {
+                title: "Fase 6: Konsolidering af Magt",
+                description: "Lederen ændrer forfatningen for at kunne sidde på livstid. Alle magt koncentreres hos præsidentkontoret.",
+                externalFactors: "Internationale sanktioner indføres, men lederen styrker båndene til andre autoritære regimer. Økonomien begynder at lide.",
+                symbol: "👑",
+                symbolClass: "consolidation",
+                narratives: [
+                    { citizen: "Forretningsmand, 45 år", text: "Min virksomhed blev konfiskeret fordi jeg donerede til opposition. Nu arbejder jeg i sort økonomi for at overleve." },
+                    { citizen: "Læge, 40 år", text: "Sygehusene mangler medicin på grund af sanktioner. Regeringen bruger ressourcer på paladser og sikkerhedsstyrker." }
+                ],
+                stats: { democracy: 20, rights: 15, economy: 45, fear: 80 },
+                warning: "Verdensbanken advarer om økonomisk kollaps. Hyperinflation begynder at ramme almindelige borgere."
+            },
+            {
+                title: "Fase 7: Totalitært Regime",
+                description: "Staten etablerer omfattende overvågningssystemer. Borgerne opfordres til at angive hinanden for 'statsfjendsk aktivitet'.",
+                externalFactors: "Landet er internationalt isoleret. Kun få allierede anerkender regimet. Humanitær hjælp har svært ved at nå frem.",
+                symbol: "👁️",
+                symbolClass: "totalitarian",
+                narratives: [
+                    { citizen: "IT-specialist, 30 år", text: "Jeg hjalp med at installere overvågningssystemer. Nu ved jeg for meget og kan ikke flygte. Jeg lever i konstant frygt." },
+                    { citizen: "Mor, 34 år", text: "Min søn på 12 år kom hjem og fortalte at de lærer at angive 'forrædere' i skolen. Hvordan beskytter jeg ham?" }
+                ],
+                stats: { democracy: 10, rights: 5, economy: 25, fear: 90 },
+                warning: "FN rapporterer om systematiske menneskerettighedskrænkelser og forsvinden af tusindvis af borgere."
+            },
+            {
+                title: "Fase 8: Fuldt Samfundskollaps",
+                description: "Landet er i dyb krise med hyperinflation, fødevaremangel og voldelige sammenstød. Staten har mistet kontrollen i mange områder.",
+                externalFactors: "Humanitær katastrofe med millioner af flygtninge. Internationale magter er splittet. Nabolande lukker grænserne.",
+                symbol: "💀",
+                symbolClass: "collapse-full",
+                narratives: [
+                    { citizen: "Mor, 32 år", text: "Mine børn sulver. Vi har ikke spist ordentligt i uger. Der er ingen medicin til min syge datter." },
+                    { citizen: "Studerende, 21 år", text: "Universitetet er lukket. Alle mine venner er enten flygtet, fængslet eller dræbt. Jeg ved ikke hvad jeg skal gøre." },
+                    { citizen: "Tidligere soldat, 28 år", text: "Jeg deserterede fra hæren. Vi får ikke løn, og der er ikke mad. Nu kæmper jeg for at overleve som alle andre." }
+                ],
+                stats: { democracy: 0, rights: 0, economy: 5, fear: 100 },
+                warning: "Landet er på randen af borgerkrig. Internationale organisationer advarer om totalt kollaps af staten."
+            }
+        ];
+        
+        let currentPhase = 0;
+        let chart;
+        
+        // Initialize chart
+        function initChart() {
+            const ctx = document.getElementById('statsChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['Demokrati', 'Menneskerettigheder', 'Økonomi', 'Borgeres frygt (omvendt skala)'],
+                    datasets: [{
+                        label: 'Nuværende tilstand',
+                        data: [100, 100, 85, 95], // Frygt er omvendt (100 - 5)
+                        backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                        borderColor: 'rgba(52, 152, 219, 1)',
+                        pointBackgroundColor: 'rgba(52, 152, 219, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(52, 152, 219, 1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: {
+                                display: true
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 100
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Update phase display
+        function updatePhase() {
+            const phase = phases[currentPhase];
+            
+            // Update phase info
+            document.getElementById('phase-title').textContent = phase.title;
+            document.getElementById('phase-description').textContent = phase.description;
+            document.getElementById('external-factors-text').textContent = phase.externalFactors;
+            
+            // Update symbol
+            const symbolElement = document.getElementById('symbol');
+            symbolElement.textContent = phase.symbol;
+            symbolElement.className = `symbol ${phase.symbolClass}`;
+            
+            // Update narratives
+            const narrativesContainer = document.getElementById('narratives-container');
+            narrativesContainer.innerHTML = '';
+            phase.narratives.forEach(narrative => {
+                const narrativeDiv = document.createElement('div');
+                narrativeDiv.className = 'narrative';
+                narrativeDiv.innerHTML = `<p><span class="citizen">${narrative.citizen}:</span> ${narrative.text}</p>`;
+                narrativesContainer.appendChild(narrativeDiv);
+            });
+            
+            // Update stats
+            document.getElementById('democracy-value').textContent = phase.stats.democracy;
+            document.getElementById('rights-value').textContent = phase.stats.rights;
+            document.getElementById('economy-value').textContent = phase.stats.economy;
+            document.getElementById('fear-value').textContent = phase.stats.fear;
+            
+            // Update chart
+            if (chart) {
+                chart.data.datasets[0].data = [
+                    phase.stats.democracy,
+                    phase.stats.rights,
+                    phase.stats.economy,
+                    100 - phase.stats.fear // Invert fear for better visualization
+                ];
+                
+                // Change chart color based on phase
+                const colors = [
+                    'rgba(52, 152, 219, 1)',   // Blue for democracy
+                    'rgba(155, 89, 182, 1)',   // Purple for polarization
+                    'rgba(52, 152, 219, 1)',   // Blue for early erosion
+                    'rgba(243, 156, 18, 1)',   // Orange for late erosion
+                    'rgba(231, 76, 60, 1)',    // Red for authoritarian
+                    'rgba(192, 57, 43, 1)',    // Dark red for consolidation
+                    'rgba(142, 68, 173, 1)',   // Purple for totalitarian
+                    'rgba(44, 62, 80, 1)'      // Dark blue for collapse
+                ];
+                
+                chart.data.datasets[0].borderColor = colors[currentPhase];
+                chart.data.datasets[0].pointBackgroundColor = colors[currentPhase];
+                chart.update();
+            }
+            
+            // Update warning
+            const warningElement = document.getElementById('warning-message');
+            if (phase.warning) {
+                document.getElementById('warning-text').textContent = phase.warning;
+                warningElement.style.display = 'block';
+            } else {
+                warningElement.style.display = 'none';
+            }
+            
+            // Update phase indicator
+            for (let i = 1; i <= 8; i++) {
+                const dot = document.getElementById(`dot-${i}`);
+                if (i < currentPhase + 1) {
+                    dot.className = 'phase-dot completed';
+                } else if (i === currentPhase + 1) {
+                    dot.className = 'phase-dot active';
+                } else {
+                    dot.className = 'phase-dot';
+                }
+            }
+            
+            // Update button
+            const button = document.getElementById('next-phase');
+            if (currentPhase === phases.length - 1) {
+                button.textContent = 'Genstart simulation';
+                button.onclick = restartSimulation;
+            } else {
+                button.textContent = 'Næste fase';
+                button.onclick = advancePhase;
+            }
+        }
+        
+        // Advance to next phase
+        function advancePhase() {
+            if (currentPhase < phases.length - 1) {
+                currentPhase++;
+                updatePhase();
+            }
+        }
+        
+        // Restart simulation
+        function restartSimulation() {
+            currentPhase = 0;
+            updatePhase();
+        }
+        
+        // Initialize simulation
+        window.onload = function() {
+            initChart();
+            updatePhase();
+        };
+    </script>
+</body>
+</html>
