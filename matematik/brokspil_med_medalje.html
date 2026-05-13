@@ -1,1 +1,46 @@
 
+<!DOCTYPE html>
+<html lang='da'>
+<head>
+<meta charset='UTF-8'>
+<title>Brøkspil – medalje version</title>
+<meta name='viewport' content='width=device-width, initial-scale=1'>
+<style>
+ body {font-family: Arial, sans-serif; background:#ffe6ef; margin:0; padding:0;}
+ h1 {text-align:center; padding:20px; color:#d65f86;}
+ #game {max-width:900px; margin:auto; text-align:center;}
+ .fraction {font-size:2.4rem; padding:20px; background:#ffd7e8; border:3px solid #df98b4; border-radius:12px; display:inline-block; margin-top:30px;}
+ #targets {display:flex; justify-content:center; flex-wrap:wrap; gap:15px; margin-top:30px;}
+ .target {width:120px; height:120px; background:#ffd7e8; border:3px dashed #df98b4; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.8rem; cursor:pointer;}
+ .target.correct {background:#c6f7d0; border-color:#6bcf7d;}
+ #score {margin-top:20px; font-size:1.6rem; color:#cc4f76;}
+ #win {display:none; position:fixed; inset:0; background:rgba(255,230,240,0.98); text-align:center; padding-top:150px; font-size:2.4rem; color:#d65f86;}
+ #medal {font-size:8rem; margin-top:20px; animation:pop 0.8s ease-in-out infinite alternate;}
+ @keyframes pop {from {transform:scale(1);} to {transform:scale(1.15);} }
+</style>
+</head>
+<body>
+<h1>Brøkspil – forlæng og forkort</h1>
+<div id='game'>
+ <div id='score'>Point: <span id='points'>0</span>/20</div>
+ <div class='fraction' id='current'></div>
+ <h2 style='color:#b25779;'>Klik på den rigtige brøk:</h2>
+ <div id='targets'></div>
+</div>
+<div id='win'>🎉 Tillykke! Du har vundet! 🎉<div id='medal'>🏅</div></div>
+<script>
+const targets=[{n:1,d:2},{n:1,d:3},{n:1,d:4},{n:2,d:3},{n:3,d:4},{n:1,d:5}];
+let points=0; let current=null; let counter=0;
+const pling=new Audio("data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQcAAAAA");
+function speak(t){let u=new SpeechSynthesisUtterance(t);u.lang='da-DK';speechSynthesis.speak(u);} 
+function eq(a,b){return a.n*b.d===a.d*b.n;} 
+function randEq(fr){let f=Math.floor(Math.random()*8)+2; return {n:fr.n*f,d:fr.d*f};}
+function pizza(n,d){let size=90; let r=size/2-2; let cx=size/2,cy=size/2; let slice=360/d; let svg=`<svg width='${size}' height='${size}' viewBox='0 0 ${size} ${size}'>`; svg+=`<circle cx='${cx}' cy='${cy}' r='${r+2}' fill='#ffe2ec' stroke='#df98b4' stroke-width='3'/>`; for(let i=0;i<d;i++){let start=-90+i*slice; let end=-90+(i+1)*slice; let large=(end-start)>180?1:0; let sX=cx+r*Math.cos(start*Math.PI/180); let sY=cy+r*Math.sin(start*Math.PI/180); let eX=cx+r*Math.cos(end*Math.PI/180); let eY=cy+r*Math.sin(end*Math.PI/180); let fill=i<n?'#ff9ec1':'#fff6f9'; svg+=`<path d='M ${cx} ${cy} L ${sX} ${sY} A ${r} ${r} 0 ${large} 1 ${eX} ${eY} Z' fill='${fill}' stroke='#df98b4'/>`; } svg+=`</svg>`; return svg;} 
+function newFraction(){let b=targets[Math.floor(Math.random()*targets.length)]; current=randEq(b); counter++; let el=document.getElementById('current'); if(counter%2===0){ el.innerHTML=pizza(current.n,current.d); } else { el.textContent=current.n+"/"+current.d; }} 
+function loadTargets(){let box=document.getElementById('targets'); box.innerHTML=''; targets.forEach(fr=>{ let el=document.createElement('div'); el.className='target'; el.textContent=fr.n+'/'+fr.d; el.onclick=()=>check(fr,el); box.appendChild(el); }); } 
+function check(fr,el){if(eq(fr,current)){ pling.play(); points++; document.getElementById('points').textContent=points; el.classList.add('correct'); setTimeout(()=>el.classList.remove('correct'),500); if(points>=20){document.getElementById('win').style.display='block'; speak('Du har fået en medalje!'); return;} newFraction(); speak('Korrekt!'); } else speak('Prøv igen'); } 
+loadTargets(); newFraction();
+</script>
+</body>
+</html>
+
