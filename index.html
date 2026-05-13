@@ -441,6 +441,18 @@
                 const isFavorite = favorites.includes(item.id);
                 const isNew = newestIds.includes(item.id);
 
+                // Generer en fast Bauhaus-farve baseret på fagets navn (så fx "Matematik" altid har samme farve)
+                const bauhausColors = [
+                    { bg: 'bg-bauhaus-yellow', text: 'text-bauhaus-black' },
+                    { bg: 'bg-bauhaus-blue', text: 'text-bauhaus-white' },
+                    { bg: 'bg-bauhaus-red', text: 'text-bauhaus-white' }
+                ];
+                let hash = 0;
+                for (let i = 0; i < item.subject.length; i++) {
+                    hash = item.subject.charCodeAt(i) + ((hash << 5) - hash);
+                }
+                const subjectStyle = bauhausColors[Math.abs(hash) % bauhausColors.length];
+
                 // Smart håndtering af kontaktinfo (Email eller URL)
                 let contactHtml = `> Udvikler: ${item.author}`;
                 if (item.contact) {
@@ -477,7 +489,7 @@
                     
                     <a href="${item.url}" target="_blank" rel="noopener noreferrer" class="p-5 flex-1 flex flex-col outline-none cursor-pointer">
                         <div class="flex flex-wrap gap-2 mb-4 relative">
-                            <span class="font-mono text-xs px-2 py-1 bg-bauhaus-yellow text-bauhaus-black border-[2px] border-bauhaus-black dark:border-bauhaus-white uppercase font-bold">
+                            <span class="font-mono text-xs px-2 py-1 ${subjectStyle.bg} ${subjectStyle.text} border-[2px] border-bauhaus-black dark:border-bauhaus-white uppercase font-bold">
                                 ${item.subject}
                             </span>
                             <span class="font-mono text-xs px-2 py-1 bg-bauhaus-white dark:bg-bauhaus-black text-bauhaus-black dark:text-bauhaus-white border-[2px] border-bauhaus-black dark:border-bauhaus-white uppercase font-bold">
