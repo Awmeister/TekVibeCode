@@ -215,9 +215,9 @@
                         Indlæser system...
                     </p>
 
-                    <a href="mailto:awt@gentofte.dk?subject=Nyt%20Vibe%20Coding%20Projekt&body=Titel%3A%20%0AFag%3A%20%0ALink%3A%20%0ABeskrivelse%3A%20" class="block w-full text-center p-3 mb-4 border-[3px] border-bauhaus-black dark:border-bauhaus-white bg-bauhaus-blue text-bauhaus-white hover:bg-bauhaus-red hover:text-bauhaus-white transition-colors font-mono text-sm font-bold uppercase shadow-brutal-black dark:shadow-brutal-white active:translate-y-1 active:translate-x-1 active:shadow-none">
+                    <button id="submit-project-btn" class="w-full text-center p-3 mb-4 border-[3px] border-bauhaus-black dark:border-bauhaus-white bg-bauhaus-blue text-bauhaus-white hover:bg-bauhaus-red hover:text-bauhaus-white transition-colors font-mono text-sm font-bold uppercase shadow-brutal-black dark:shadow-brutal-white active:translate-y-1 active:translate-x-1 active:shadow-none">
                         > Indsend_projekt()
-                    </a>
+                    </button>
 
                     <button id="about-vibe-btn" class="w-full text-center p-3 mb-6 border-[3px] border-bauhaus-black dark:border-bauhaus-white bg-bauhaus-yellow text-bauhaus-black hover:bg-bauhaus-blue hover:text-bauhaus-white dark:hover:bg-bauhaus-blue transition-colors font-mono text-sm font-bold uppercase shadow-brutal-black dark:shadow-brutal-white active:translate-y-1 active:translate-x-1 active:shadow-none">
                         [?] Hvad_er_Vibe_Coding
@@ -295,6 +295,38 @@
                             >> Kontakt SuperTekAmbassadør <a href="mailto:awt@gentofte.dk" class="font-bold text-bauhaus-blue dark:text-bauhaus-yellow hover:text-bauhaus-red dark:hover:text-bauhaus-red hover:underline transition-colors">Anders Westermann</a> for at høre om oplæg, workshops og sparring om vibe coding.
                         </p>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Indsend Projekt Modal -->
+    <div id="submit-modal" class="fixed inset-0 bg-bauhaus-black/80 dark:bg-bauhaus-black/90 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-bauhaus-lightgray dark:bg-bauhaus-darkgray border-[6px] border-bauhaus-black dark:border-bauhaus-white max-w-2xl w-full shadow-[12px_12px_0px_0px_#005A9C] dark:shadow-[12px_12px_0px_0px_#4080B5] transform transition-transform scale-95 opacity-0 duration-200" id="submit-modal-content">
+            <!-- Modal Header -->
+            <div class="border-b-[6px] border-bauhaus-black dark:border-bauhaus-white px-4 py-3 flex justify-between items-center bg-bauhaus-blue">
+                <span class="font-mono text-sm text-bauhaus-white font-black uppercase tracking-wider">
+                    UPLOAD.exe // Indsend_projekt
+                </span>
+                <button id="close-submit-modal-btn" class="text-bauhaus-white hover:scale-125 transition-transform">
+                    <svg class="w-6 h-6 font-bold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <!-- Modal Body -->
+            <div class="p-6 md:p-8">
+                <h2 class="text-3xl font-black mb-4 text-bauhaus-black dark:text-bauhaus-white uppercase">Del dit projekt!</h2>
+                
+                <div class="space-y-6 text-bauhaus-black dark:text-bauhaus-white text-lg font-medium leading-relaxed">
+                    <p>
+                        Har du vibe codet en fed løsning, du gerne vil dele med os andre? Så kontakt <a href="mailto:awt@gentofte.dk" class="text-bauhaus-blue dark:text-bauhaus-yellow hover:text-bauhaus-red dark:hover:text-bauhaus-red hover:underline font-bold transition-colors">Anders Westermann</a>.
+                    </p>
+                    <p>
+                        Jeg glæder mig til at høre fra dig.
+                    </p>
+                    <p class="font-mono font-bold text-bauhaus-red dark:text-bauhaus-yellow text-xl">
+                        #Sharing_Is_Caring
+                    </p>
                 </div>
             </div>
         </div>
