@@ -8,6 +8,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <!-- Tilføjet PapaParse for at kunne læse Google Sheets CSV-filer nemt -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -294,68 +296,10 @@
     </div>
 
     <script>
-        const examplesData = [
-            {
-                id: 1,
-                title: "Interaktiv Brøk-pizza",
-                description: "En visuel og interaktiv pizza-skærer til at hjælpe elever med at forstå addition og subtraktion af brøker på en sjov måde.",
-                subject: "Matematik",
-                level: "Mellemtrin",
-                author: "Jens Hansen",
-                url: "https://dit-github-navn.github.io/repo/broek.html",
-                date: "2026-05-10" // Tilføjet dato
-            },
-            {
-                id: 2,
-                title: "Den Store Vikinge-quiz",
-                description: "Test din viden om de danske vikinger. Spillet inkluderer pointtælling og uddybende forklaringer ved forkerte svar.",
-                subject: "Historie",
-                level: "Mellemtrin",
-                author: "Lise Jensen",
-                url: "https://dit-github-navn.github.io/repo/viking.html",
-                date: "2026-04-20"
-            },
-            {
-                id: 3,
-                title: "Celledeling Animation (Mitose)",
-                description: "En trin-for-trin visuel gennemgang af mitose. Eleven kan styre hastigheden og se hvad der sker med kromosomerne i hver fase.",
-                subject: "Biologi",
-                level: "Udskoling",
-                author: "Søren Kristensen",
-                url: "https://dit-github-navn.github.io/repo/celle.html",
-                date: "2026-03-15"
-            },
-            {
-                id: 4,
-                title: "Stavetræneren",
-                description: "Et simpelt værktøj hvor elever lytter til et ord og skal stave det korrekt. Særligt fokus på drilske vokaler.",
-                subject: "Dansk",
-                level: "Indskoling",
-                author: "Mette Nielsen",
-                url: "https://dit-github-navn.github.io/repo/stave.html",
-                date: "2026-04-01"
-            },
-            {
-                id: 5,
-                title: "Kredsløbs-byggeren",
-                description: "Træk og slip batterier, pærer og ledninger for at bygge et fungerende elektrisk kredsløb og lær om strøm.",
-                subject: "Fysik/Kemi",
-                level: "Udskoling",
-                author: "Anders Thomsen",
-                url: "https://dit-github-navn.github.io/repo/kredsloeb.html",
-                date: "2026-05-05" 
-            },
-            {
-                id: 6,
-                title: "Omsætning af Måleenheder",
-                description: "Træn omsætning mellem mm, cm, dm, m og km med en visuel trappemodel.",
-                subject: "Matematik",
-                level: "Mellemtrin",
-                author: "Jens Hansen",
-                url: "https://dit-github-navn.github.io/repo/maaling.html",
-                date: "2026-02-10"
-            }
-        ];
+        // SÆT DIT GOOGLE SHEETS CSV-LINK IND MELLEM ANFØRSELSTEGNENE HER:
+        const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRnD6NwkcKN6F1SS0ZyIO3tleSPC-Z5baumH4oR5OPuXnwH7hkVkscUxRvLQcHyIkM3wDk_Bp1DEM3B/pub?output=csv";
+
+        let examplesData = [];
 
         const gridContainer = document.getElementById('grid-container');
         const searchInput = document.getElementById('search-input');
@@ -374,8 +318,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             initTheme();
-            populateFilters();
-            runBootAnimation();
+            startBootSequence();
             
             searchInput.addEventListener('input', filterData);
             subjectFilter.addEventListener('change', filterData);
@@ -391,7 +334,7 @@
             });
         });
 
-        function runBootAnimation() {
+        function startBootSequence() {
             // Sætter alle elementer i sidebaren til at "boote" ind 
             const sidebarElements = document.querySelectorAll('aside > div > div');
             sidebarElements.forEach((el, index) => {
@@ -399,7 +342,45 @@
                 el.style.animationDelay = `${index * 0.15}s`;
             });
             
-            // Typemaskine-effekt
+            resultCountMessage.textContent = "STATUS: FORBINDER TIL DATABASE...";
+
+            if (SHEET_CSV_URL === "INDSÆT_DIT_LINK_HER" || SHEET_CSV_URL === "") {
+                resultCountMessage.textContent = "FEJL: MANGLER GOOGLE SHEETS LINK I KODEN";
+                return;
+            }
+
+            // Henter data fra Google Sheets
+            fetch(SHEET_CSV_URL)
+                .then(response => response.text())
+                .then(csvText => {
+                    Papa.parse(csvText, {
+                        header: true, // Læser den første række som overskrifter
+                        skipEmptyLines: true,
+                        complete: function(results) {
+                            // Omdanner rækkerne fra regnearket til vores format
+                            examplesData = results.data.map((row, index) => ({
+                                id: index + 1,
+                                title: row['Titel'] || 'Uden titel',
+                                description: row['Beskrivelse'] || '',
+                                subject: row['Fag'] || 'Ukendt',
+                                level: row['Afdeling'] || 'Ukendt',
+                                author: row['Udvikler'] || 'Ukendt',
+                                url: row['URL'] || '#',
+                                date: row['Dato'] || '2026-01-01' 
+                            }));
+
+                            populateFilters();
+                            runTypingAnimation();
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error("Kunne ikke hente data:", error);
+                    resultCountMessage.textContent = "FEJL: KUNNE IKKE LÆSE DATABASE";
+                });
+        }
+
+        function runTypingAnimation() {
             let text = "STATUS: SYSTEM_READY";
             resultCountMessage.textContent = "";
             let i = 0;
@@ -412,7 +393,7 @@
                     setTimeout(filterData, 200); // Tegner kortene til sidst!
                 }
             }
-            setTimeout(typeWriter, 600);
+            setTimeout(typeWriter, 300);
         }
 
         function populateFilters() {
