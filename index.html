@@ -598,6 +598,11 @@
         const modalContent = document.getElementById('about-modal-content');
         const closeBtn = document.getElementById('close-modal-btn');
 
+        const submitBtn = document.getElementById('submit-project-btn');
+        const submitModal = document.getElementById('submit-modal');
+        const submitModalContent = document.getElementById('submit-modal-content');
+        const closeSubmitBtn = document.getElementById('close-submit-modal-btn');
+
         function openModal() {
             modal.classList.remove('hidden');
             // Lille forsinkelse for at CSS transitionen kan køre
@@ -615,8 +620,27 @@
             }, 200); // Venter på at animationen er færdig
         }
 
+        function openSubmitModal() {
+            submitModal.classList.remove('hidden');
+            setTimeout(() => {
+                submitModalContent.classList.remove('scale-95', 'opacity-0');
+                submitModalContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function closeSubmitModal() {
+            submitModalContent.classList.remove('scale-100', 'opacity-100');
+            submitModalContent.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                submitModal.classList.add('hidden');
+            }, 200);
+        }
+
         aboutBtn.addEventListener('click', openModal);
         closeBtn.addEventListener('click', closeModal);
+        
+        submitBtn.addEventListener('click', openSubmitModal);
+        closeSubmitBtn.addEventListener('click', closeSubmitModal);
         
         // Luk modal hvis man klikker uden for boksen
         modal.addEventListener('click', (e) => {
@@ -624,11 +648,18 @@
                 closeModal();
             }
         });
+
+        submitModal.addEventListener('click', (e) => {
+            if (e.target === submitModal) {
+                closeSubmitModal();
+            }
+        });
         
         // Luk på Escape-knap
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
-                closeModal();
+            if (e.key === 'Escape') {
+                if (!modal.classList.contains('hidden')) closeModal();
+                if (!submitModal.classList.contains('hidden')) closeSubmitModal();
             }
         });
 
