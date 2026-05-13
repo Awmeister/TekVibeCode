@@ -1,1 +1,317 @@
 
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SprogRejse – Interaktiv by & sprogtræning (DE/FR)</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    :root {
+      --bg: #ffffff;
+      --fg: #111111;
+      --brand: #1a73e8;
+      --muted: #6b7280;
+      --focus: #1a73e8;
+    }
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: var(--bg); color: var(--fg); line-height:1.6; }
+    header { display:flex; gap:16px; align-items:center; padding:10px 12px; border-bottom:1px solid #e5e7eb; position:sticky; top:0; background:var(--bg); z-index:5; }
+    header h1 { font-size:18px; margin:0; }
+    .controls { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+    label { font-size:14px; }
+    select, button, input[type="checkbox"] { font: inherit; }
+    button, .btn { background: var(--brand); color:#fff; border:0; padding:8px 12px; border-radius:8px; cursor:pointer; }
+    button.secondary { background:#e5e7eb; color:#111; }
+    button:focus, select:focus { outline:3px solid var(--focus); outline-offset:2px; }
+    .sr-only { position:absolute !important; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+
+    main { display:grid; grid-template-columns: 1fr 380px; gap:0; min-height: calc(100vh - 56px); }
+    #map { height: calc(100vh - 56px); }
+    aside { border-left:1px solid #e5e7eb; padding:12px; display:flex; flex-direction:column; gap:12px; }
+
+    .panel { background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; padding:10px; }
+    .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .toggle { display:flex; align-items:center; gap:6px; }
+
+    .mission { border:1px solid #e5e7eb; border-radius:10px; padding:10px; background:#fff; }
+    .mission h3 { margin:0 0 6px 0; font-size:16px; }
+    .npc { padding:8px; border-radius:8px; background:#eef2ff; margin-bottom:6px; }
+    .choices { display:flex; flex-direction:column; gap:6px; }
+    .choices button { text-align:left; }
+    .caption { font-size:14px; color: var(--muted); }
+
+    /* Dysleksi-tilstand */
+    .dyslexia p, .dyslexia li, .dyslexia .npc, .dyslexia .mission { letter-spacing:0.06em; word-spacing:0.12em; line-height:1.8; }
+    .dyslexia * { font-variant-ligatures: none; }
+    .dyslexia em, .dyslexia i { font-style: normal; }
+
+    /* Høj kontrast */
+    .high-contrast { --bg:#000; --fg:#fff; --brand:#00aaff; --muted:#cbd5e1; --focus:#ffcc00; }
+
+    /* Reduceret bevægelse */
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+    /* Store klikmål */
+    button, select { min-height:44px; }
+  </style>
+</head>
+<body>
+  <a class="sr-only" href="#main">Spring til indhold</a>
+  <header role="banner">
+    <h1 aria-label="SprogRejse – Interaktivt sprog- og bykort">SprogRejse</h1>
+    <div class="controls" role="group" aria-label="Indstillinger">
+      <label for="city">By:</label>
+      <select id="city" name="city">
+        <option value="berlin">Berlin (DE)</option>
+        <option value="lyon">Lyon (FR)</option>
+      </select>
+
+      <label for="level">Niveau:</label>
+      <select id="level" name="level">
+        <option value="A1">A1</option>
+        <option value="A2">A2</option>
+        <option value="B1">B1</option>
+      </select>
+
+      <span class="toggle"><input type="checkbox" id="tts" checked /><label for="tts">Læs‑op</label></span>
+      <span class="toggle"><input type="checkbox" id="captions" checked /><label for="captions">Undertekster</label></span>
+      <span class="toggle"><input type="checkbox" id="dyslexia" /><label for="dyslexia">Dysleksi‑tilstand</label></span>
+      <span class="toggle"><input type="checkbox" id="contrast" /><label for="contrast">Høj kontrast</label></span>
+    </div>
+  </header>
+
+  <main id="main" role="main">
+    <div id="map" role="application" aria-label="Interaktivt kort"></div>
+    <aside aria-label="Missioner og dialog">
+      <section class="panel" aria-live="polite" aria-atomic="true">
+        <strong>Instruktion:</strong>
+        <p id="instruction">Vælg en by og klik på et kort‑ikon for at starte en mission.</p>
+      </section>
+
+      <section class="mission" id="missionPanel" hidden>
+        <h3 id="missionTitle">Mission</h3>
+        <div class="npc" id="npcText" role="region" aria-label="Dialog"></div>
+        <div class="caption" id="captionText"></div>
+        <div class="row">
+          <input id="answer" aria-label="Skriv dit svar" placeholder="Sig eller skriv dit svar" style="flex:1; min-height:44px; padding:8px;" />
+          <button id="mic" class="secondary" title="Tal dit svar">🎤</button>
+          <button id="speak" class="secondary" title="Læs sætningen op">🔊</button>
+        </div>
+        <div class="choices" id="choices"></div>
+      </section>
+
+      <section class="panel">
+        <strong>Tip:</strong>
+        <ul>
+          <li>Tastatur: Tab/Shift+Tab for at navigere, Enter for at vælge.</li>
+          <li>Slå animationer fra via systemets "Reducer bevægelse".</li>
+        </ul>
+      </section>
+    </aside>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // --- Data: Byer, steder og missioner ---
+    const DATA = {
+      berlin: {
+        center: [52.5200, 13.4050], zoom: 13, lang: 'de-DE',
+        points: [
+          {
+            id: 'brandenburger', title: 'Brandenburger Tor', coords: [52.5163, 13.3777],
+            missions: [{
+              level: 'A1',
+              title: 'Spørg om vej til U‑Bahn',
+              npc: 'Thomas',
+              prompt: 'Entschuldigung, wo ist die nächste U‑Bahn‑Station?',
+              slow: 'Ent-schul-di-gung, wo ist die nächs-te U‑Bahn‑Sta-tion?',
+              npcReply: 'Die Station ist dort drüben, zwei Minuten zu Fuß.',
+              choices: [
+                { text: 'Vielen Dank!', result: 'Super, god høflighed!' },
+                { text: 'Wiederholen Sie bitte.', result: 'Her er den langsomme version.' }
+              ]
+            }]
+          },
+          {
+            id: 'alex', title: 'Alexanderplatz', coords: [52.5219, 13.4132],
+            missions: [{
+              level: 'A2',
+              title: 'Køb en billet',
+              npc: 'Anna',
+              prompt: 'Ich hätte gern eine Fahrkarte zum Zoo, bitte.',
+              slow: 'Ich hät-te gern ei-ne Fahr-kar-te zum Zoo, bit-te.',
+              npcReply: 'Das macht 3 Euro, bitte.',
+              choices: [
+                { text: 'Hier sind 3 Euro.', result: 'Perfekt!' },
+                { text: 'Kann ich mit Karte zahlen?', result: 'Ja, Karte ist möglich.' }
+              ]
+            }]
+          }
+        ]
+      },
+      lyon: {
+        center: [45.7578, 4.8320], zoom: 13, lang: 'fr-FR',
+        points: [
+          {
+            id: 'vieuxlyon', title: 'Vieux Lyon', coords: [45.7622, 4.8270],
+            missions: [{
+              level: 'A1',
+              title: 'Spørg om vej',
+              npc: 'Claire',
+              prompt: "Excusez‑moi, où est la station de métro la plus proche ?",
+              slow: "Ex-cu-sez-moi, où est la sta-tion de mé-tro la plus pro-che ?",
+              npcReply: 'La station est juste là-bas, à deux minutes à pied.',
+              choices: [
+                { text: 'Merci beaucoup !', result: 'Très bien, poli et klart.' },
+                { text: 'Répétez, s’il vous plaît.', result: 'Voici la version lente.' }
+              ]
+            }]
+          },
+          {
+            id: 'bellecour', title: 'Place Bellecour', coords: [45.7576, 4.8322],
+            missions: [{
+              level: 'A2',
+              title: 'Bestil mad',
+              npc: 'Marc',
+              prompt: "Je voudrais un sandwich au fromage et une eau, s'il vous plaît.",
+              slow: "Je vou-drais un sand-wich au fro-mage et une eau, s'il vous plaît.",
+              npcReply: "Ça fait 6 euros, s'il vous plaît.",
+              choices: [
+                { text: 'Voilà 6 euros.', result: 'Parfait !' },
+                { text: 'Puis‑je payer par carte ?', result: 'Oui, bien sûr.' }
+              ]
+            }]
+          }
+        ]
+      }
+    };
+
+    // --- Tilstand ---
+    const state = {
+      city: 'berlin', level: 'A1', tts: true, captions: true, lang: 'de-DE',
+      speechSupported: !!(window.SpeechRecognition || window.webkitSpeechRecognition)
+    };
+
+    // --- UI elementer ---
+    const citySel = document.getElementById('city');
+    const levelSel = document.getElementById('level');
+    const ttsChk = document.getElementById('tts');
+    const capChk = document.getElementById('captions');
+    const dysChk = document.getElementById('dyslexia');
+    const conChk = document.getElementById('contrast');
+
+    const missionPanel = document.getElementById('missionPanel');
+    const missionTitle = document.getElementById('missionTitle');
+    const npcText = document.getElementById('npcText');
+    const captionText = document.getElementById('captionText');
+    const choicesDiv = document.getElementById('choices');
+    const answerInput = document.getElementById('answer');
+    const micBtn = document.getElementById('mic');
+    const speakBtn = document.getElementById('speak');
+
+    // --- Kort ---
+    const map = L.map('map', { keyboard: true }).setView(DATA.berlin.center, DATA.berlin.zoom);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap bidragydere' }).addTo(map);
+    let markers = [];
+
+    function clearMarkers() { markers.forEach(m => map.removeLayer(m)); markers = []; }
+
+    function loadCity(key) {
+      const city = DATA[key];
+      state.city = key; state.lang = city.lang;
+      map.setView(city.center, city.zoom);
+      clearMarkers();
+      city.points.forEach(p => {
+        const m = L.marker(p.coords, { keyboard: true }).addTo(map);
+        m.bindPopup(p.title + ' – tryk Enter for mission');
+        m.on('click keypress', (e) => {
+          if (e.type === 'click' || (e.originalEvent && e.originalEvent.key === 'Enter')) {
+            openMission(p);
+          }
+        });
+        markers.push(m);
+      });
+    }
+
+    function openMission(point) {
+      // Find første mission der matcher niveau (ellers tag første)
+      const mission = point.missions.find(m => m.level === state.level) || point.missions[0];
+      missionPanel.hidden = false;
+      missionTitle.textContent = point.title + ' • ' + mission.title + ' (' + mission.level + ')';
+      npcText.textContent = mission.npc + ': ' + mission.npcReply;
+      captionText.textContent = state.captions ? mission.prompt : '';
+      renderChoices(mission);
+      // Læs prompt op, hvis TTS er slået til
+      if (state.tts) speakText(mission.prompt, DATA[state.city].lang);
+      // Gem current mission
+      missionPanel.dataset.current = JSON.stringify({ pointId: point.id, missionLevel: mission.level });
+      answerInput.focus();
+    }
+
+    function renderChoices(mission) {
+      choicesDiv.innerHTML = '';
+      mission.choices.forEach(c => {
+        const btn = document.createElement('button');
+        btn.className = 'secondary';
+        btn.textContent = c.text;
+        btn.onclick = () => {
+          captionText.textContent = c.result;
+          if (state.tts) speakText(c.text, DATA[state.city].lang);
+        };
+        choicesDiv.appendChild(btn);
+      });
+    }
+
+    // --- TTS ---
+    function speakText(text, lang) {
+      try {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = lang;
+        u.rate = 0.95; // roligere tale
+        window.speechSynthesis.speak(u);
+      } catch (e) { console.warn('TTS fejl', e); }
+    }
+
+    // --- STT (fallback til tekst) ---
+    const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let rec;
+    if (Rec) {
+      rec = new Rec();
+      rec.lang = DATA[state.city].lang;
+      rec.interimResults = false;
+      rec.maxAlternatives = 1;
+      rec.onresult = (e) => { answerInput.value = e.results[0][0].transcript; };
+      rec.onerror = () => { /* ignorer, elev kan skrive */ };
+      micBtn.onclick = () => { rec.lang = DATA[state.city].lang; rec.start(); };
+    } else {
+      micBtn.disabled = true;
+      micBtn.title = 'Stemmegenkendelse understøttes ikke i denne browser';
+    }
+
+    speakBtn.onclick = () => {
+      // Læs current mission prompt op igen
+      try {
+        const cur = JSON.parse(missionPanel.dataset.current || 'null');
+        if (!cur) return;
+        const city = DATA[state.city];
+        const point = city.points.find(p => p.id === cur.pointId);
+        const mission = point.missions.find(m => m.level === cur.missionLevel) || point.missions[0];
+        if (state.tts) speakText(mission.prompt, city.lang);
+      } catch (e) {}
+    };
+
+    // --- Indstillinger ---
+    citySel.addEventListener('change', () => { loadCity(citySel.value); });
+    levelSel.addEventListener('change', () => { state.level = levelSel.value; });
+    ttsChk.addEventListener('change', () => { state.tts = ttsChk.checked; });
+    capChk.addEventListener('change', () => { state.captions = capChk.checked; captionText.hidden = !state.captions; });
+    dysChk.addEventListener('change', () => { document.body.classList.toggle('dyslexia', dysChk.checked); });
+    conChk.addEventListener('change', () => { document.body.classList.toggle('high-contrast', conChk.checked); });
+
+    // Init
+    loadCity('berlin');
+  </script>
+</body>
+</html>
+
