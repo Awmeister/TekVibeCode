@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ligningsgenerator – 7. klasse</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+
+  :root {
+    --easy: #4ade80;
+    --medium: #facc15;
+    --hard: #f87171;
+    --bg: #0f172a;
+    --card: #1e293b;
+    --accent: #818cf8;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    color: #e2e8f0;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Stars background */
+  #stars { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+
+  .container { position: relative; z-index: 1; max-width: 780px; margin: 0 auto; padding: 20px; }
+
+  /* Header */
+  header { text-align: center; padding: 30px 0 20px; }
+  header h1 { font-size: 2.4rem; font-weight: 900; background: linear-gradient(135deg, #818cf8, #c084fc, #f472b6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  header p { color: #94a3b8; margin-top: 6px; font-size: 1rem; }
+
+  /* XP Bar */
+  .xp-section { background: var(--card); border-radius: 16px; padding: 16px 20px; margin-bottom: 20px; border: 1px solid #334155; }
+  .xp-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .xp-label { font-weight: 700; font-size: 0.95rem; color: #c084fc; }
+  .xp-count { font-size: 0.85rem; color: #94a3b8; }
+  .xp-bar-bg { background: #334155; border-radius: 99px; height: 14px; overflow: hidden; }
+  .xp-bar-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #818cf8, #c084fc); transition: width 0.6s cubic-bezier(.4,2,.6,1); }
+  .streak-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .badge { background: #334155; border-radius: 99px; padding: 4px 12px; font-size: 0.8rem; font-weight: 700; display: flex; align-items: center; gap: 5px; }
+  .badge.gold { background: linear-gradient(135deg,#f59e0b,#fbbf24); color: #1e1b00; }
+  .badge.silver { background: linear-gradient(135deg,#94a3b8,#cbd5e1); color: #1e293b; }
+  .badge.bronze { background: linear-gradient(135deg,#b45309,#d97706); color: #fff; }
+
+  /* Level selector */
+  .level-selector { display: flex; gap: 12px; margin-bottom: 20px; }
+  .level-btn {
+    flex: 1; padding: 14px 10px; border-radius: 14px; border: 2px solid transparent;
+    font-family: 'Nunito', sans-serif; font-size: 1rem; font-weight: 800; cursor: pointer;
+    transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+  .level-btn .icon { font-size: 1.6rem; }
+  .level-btn.easy { background: #14532d; color: var(--easy); border-color: #14532d; }
+  .level-btn.easy.active, .level-btn.easy:hover { background: var(--easy); color: #14532d; border-color: var(--easy); transform: translateY(-3px); box-shadow: 0 8px 20px rgba(74,222,128,0.3); }
+  .level-btn.medium { background: #713f12; color: var(--medium); border-color: #713f12; }
+  .level-btn.medium.active, .level-btn.medium:hover { background: var(--medium); color: #713f12; border-color: var(--medium); transform: translateY(-3px); box-shadow: 0 8px 20px rgba(250,204,21,0.3); }
+  .level-btn.hard { background: #7f1d1d; color: var(--hard); border-color: #7f1d1d; }
+  .level-btn.hard.active, .level-btn.hard:hover { background: var(--hard); color: #7f1d1d; border-color: var(--hard); transform: translateY(-3px); box-shadow: 0 8px 20px rgba(248,113,113,0.3); }
+
+  /* Equation card */
+  .eq-card {
+    background: var(--card); border-radius: 20px; padding: 30px;
+    border: 1px solid #334155; margin-bottom: 20px;
+    animation: slideIn 0.4s ease;
+  }
+  @keyframes slideIn { from { opacity:0; transform: translateY(20px); } to { opacity:1; transform: translateY(0); } }
+
+  .eq-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+  .eq-level-tag { padding: 4px 14px; border-radius: 99px; font-size: 0.8rem; font-weight: 800; }
+  .eq-level-tag.easy { background: #14532d; color: var(--easy); }
+  .eq-level-tag.medium { background: #713f12; color: var(--medium); }
+  .eq-level-tag.hard { background: #7f1d1d; color: var(--hard); }
+  .eq-number { color: #64748b; font-size: 0.85rem; }
+
+  .equation-display {
+    text-align: center; font-size: 2.2rem; font-weight: 900;
+    color: #f1f5f9; margin: 20px 0; letter-spacing: 1px;
+    padding: 20px; background: #0f172a; border-radius: 14px;
+    border: 1px solid #334155;
+  }
+  .equation-display .x { color: #c084fc; }
+
+  .input-row { display: flex; gap: 12px; align-items: center; margin-top: 20px; }
+  .answer-label { font-weight: 700; color: #94a3b8; white-space: nowrap; }
+  .answer-input {
+    flex: 1; background: #0f172a; border: 2px solid #334155; border-radius: 12px;
+    color: #f1f5f9; font-family: 'Nunito', sans-serif; font-size: 1.3rem; font-weight: 700;
+    padding: 12px 18px; outline: none; transition: border-color 0.2s;
+  }
+  .answer-input:focus { border-color: #818cf8; }
+  .answer-input.correct { border-color: var(--easy); background: #052e16; }
+  .answer-input.wrong { border-color: var(--hard); background: #450a0a; animation: shake 0.4s; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+
+  .btn-row { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+  .btn {
+    padding: 12px 22px; border-radius: 12px; border: none; cursor: pointer;
+    font-family: 'Nunito', sans-serif; font-size: 0.95rem; font-weight: 800;
+    transition: all 0.2s; display: flex; align-items: center; gap: 6px;
+  }
+  .btn-primary { background: linear-gradient(135deg, #818cf8, #c084fc); color: white; flex: 1; justify-content: center; }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(129,140,248,0.4); }
+  .btn-hint { background: #334155; color: #facc15; }
+  .btn-hint:hover { background: #475569; }
+  .btn-new { background: #334155; color: #94a3b8; }
+  .btn-new:hover { background: #475569; color: #f1f5f9; }
+
+  /* Feedback */
+  .feedback {
+    border-radius: 14px; padding: 14px 18px; margin-top: 16px;
+    font-weight: 700; font-size: 0.95rem; display: none; animation: fadeIn 0.3s;
+  }
+  @keyframes fadeIn { from{opacity:0;transform:scale(0.95)} to{opacity:1;transform:scale(1)} }
+  .feedback.correct { background: #052e16; border: 1px solid var(--easy); color: var(--easy); display: block; }
+  .feedback.wrong { background: #450a0a; border: 1px solid var(--hard); color: var(--hard); display: block; }
+  .feedback.hint { background: #1c1917; border: 1px solid #facc15; color: #fde68a; display: block; }
+
+  /* Hint steps */
+  .hint-steps { margin-top: 10px; }
+  .hint-step { padding: 6px 0; border-bottom: 1px solid #292524; font-size: 0.9rem; }
+  .hint-step:last-child { border-bottom: none; }
+  .hint-step .step-num { color: #facc15; font-weight: 800; margin-right: 6px; }
+
+  /* Progress section */
+  .progress-section { background: var(--card); border-radius: 16px; padding: 20px; border: 1px solid #334155; margin-bottom: 20px; }
+  .progress-title { font-weight: 800; font-size: 1rem; margin-bottom: 14px; color: #c084fc; }
+  .progress-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .prog-item { background: #0f172a; border-radius: 12px; padding: 14px; text-align: center; border: 1px solid #334155; }
+  .prog-item .prog-num { font-size: 1.8rem; font-weight: 900; }
+  .prog-item .prog-label { font-size: 0.75rem; color: #64748b; margin-top: 2px; }
+  .prog-item.easy .prog-num { color: var(--easy); }
+  .prog-item.medium .prog-num { color: var(--medium); }
+  .prog-item.hard .prog-num { color: var(--hard); }
+
+  /* Achievements */
+  .achievements { background: var(--card); border-radius: 16px; padding: 20px; border: 1px solid #334155; margin-bottom: 20px; }
+  .ach-title { font-weight: 800; font-size: 1rem; margin-bottom: 14px; color: #c084fc; }
+  .ach-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+  .ach-item {
+    background: #0f172a; border-radius: 12px; padding: 10px 14px;
+    display: flex; align-items: center; gap: 8px; border: 1px solid #334155;
+    font-size: 0.85rem; font-weight: 700; opacity: 0.4; transition: all 0.3s;
+  }
+  .ach-item.unlocked { opacity: 1; border-color: #c084fc; background: #1e1b4b; animation: achPop 0.5s; }
+  @keyframes achPop { 0%{transform:scale(0.8)} 60%{transform:scale(1.1)} 100%{transform:scale(1)} }
+  .ach-icon { font-size: 1.4rem; }
+
+  /* Confetti canvas */
+  #confetti-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 999; }
+
+  /* Celebration overlay */
+  .celebration {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%) scale(0);
+    background: linear-gradient(135deg, #1e1b4b, #312e81);
+    border: 2px solid #818cf8; border-radius: 24px; padding: 40px 50px;
+    text-align: center; z-index: 1000; transition: transform 0.4s cubic-bezier(.4,2,.6,1);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .celebration.show { transform: translate(-50%,-50%) scale(1); }
+  .celebration h2 { font-size: 2rem; font-weight: 900; color: #c084fc; margin-bottom: 10px; }
+  .celebration p { color: #94a3b8; margin-bottom: 20px; }
+  .celebration .xp-gained { font-size: 2.5rem; font-weight: 900; color: #facc15; }
+
+  /* Responsive */
+  @media (max-width: 500px) {
+    header h1 { font-size: 1.8rem; }
+    .equation-display { font-size: 1.6rem; }
+    .level-selector { gap: 8px; }
+    .level-btn { font-size: 0.85rem; padding: 10px 6px; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="stars"></canvas>
+<canvas id="confetti-canvas"></canvas>
+
+<div class="celebration" id="celebration">
+  <div style="font-size:3rem">🎉</div>
+  <h2 id="cel-title">Fantastisk!</h2>
+  <p id="cel-msg">Du løste opgaven!</p>
+  <div class="xp-gained" id="cel-xp">+50 XP</div>
+  <button class="btn btn-primary" style="margin-top:20px;width:100%" onclick="closeCelebration()">Fortsæt →</button>
+</div>
+
+<div class="container">
+  <header>
+    <h1>⚡ Ligningsgenerator</h1>
+    <p>Løs ligninger og optjen XP – vælg dit niveau!</p>
+  </header>
+
+  <!-- XP Bar -->
+  <div class="xp-section">
+    <div class="xp-top">
+      <span class="xp-label">🌟 Niveau <span id="player-level">1</span></span>
+      <span class="xp-count"><span id="xp-current">0</span> / <span id="xp-next">100</span> XP</span>
+    </div>
+    <div class="xp-bar-bg"><div class="xp-bar-fill" id="xp-bar" style="width:0%"></div></div>
+    <div class="streak-row" id="streak-row">
+      <div class="badge">🔥 Streak: <span id="streak-count">0</span></div>
+      <div class="badge" id="total-badge">✅ Løst: 0</div>
+    </div>
+  </div>
+
+  <!-- Level selector -->
+  <div class="level-selector">
+    <button class="level-btn easy active" onclick="setLevel('easy',this)">
+      <span class="icon">🌱</span> Let
+    </button>
+    <button class="level-btn medium" onclick="setLevel('medium',this)">
+      <span class="icon">🔥</span> Middel
+    </button>
+    <button class="level-btn hard" onclick="setLevel('hard',this)">
+      <span class="icon">💎</span> Svær
+    </button>
+  </div>
+
+  <!-- Equation card -->
+  <div class="eq-card" id="eq-card">
+    <div class="eq-meta">
+      <span class="eq-level-tag easy" id="eq-level-tag">🌱 Let</span>
+      <span class="eq-number" id="eq-number">Opgave #1</span>
+    </div>
+    <div class="equation-display" id="eq-display">x + 3 = 7</div>
+    <div class="input-row">
+      <span class="answer-label">x =</span>
+      <input type="number" class="answer-input" id="answer-input" placeholder="Dit svar..." onkeydown="if(event.key==='Enter')checkAnswer()">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="checkAnswer()">✔ Tjek svar</button>
+      <button class="btn btn-hint" onclick="showHint()">💡 Hint</button>
+      <button class="btn btn-new" onclick="newEquation()">↻ Ny opgave</button>
+    </div>
+    <div class="feedback" id="feedback"></div>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-section">
+    <div class="progress-title">📊 Din fremgang</div>
+    <div class="progress-grid">
+      <div class="prog-item easy">
+        <div class="prog-num" id="prog-easy">0</div>
+        <div class="prog-label">🌱 Let løst</div>
+      </div>
+      <div class="prog-item medium">
+        <div class="prog-num" id="prog-medium">0</div>
+        <div class="prog-label">🔥 Middel løst</div>
+      </div>
+      <div class="prog-item hard">
+        <div class="prog-num" id="prog-hard">0</div>
+        <div class="prog-label">💎 Svær løst</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Achievements -->
+  <div class="achievements">
+    <div class="ach-title">🏆 Præstationer</div>
+    <div class="ach-grid" id="ach-grid">
+      <div class="ach-item" id="ach-first" title="Løs din første opgave">
+        <span class="ach-icon">🎯</span> Første skridt
+      </div>
+      <div class="ach-item" id="ach-streak3" title="3 i træk">
+        <span class="ach-icon">🔥</span> 3 i træk
+      </div>
+      <div class="ach-item" id="ach-streak5" title="5 i træk">
+        <span class="ach-icon">⚡</span> 5 i træk
+      </div>
+      <div class="ach-item" id="ach-10solved" title="10 opgaver løst">
+        <span class="ach-icon">🌟</span> 10 løst
+      </div>
+      <div class="ach-item" id="ach-medium" title="Løs en middel opgave">
+        <span class="ach-icon">🔥</span> Middel-mester
+      </div>
+      <div class="ach-item" id="ach-hard" title="Løs en svær opgave">
+        <span class="ach-icon">💎</span> Svær-kriger
+      </div>
+      <div class="ach-item" id="ach-nohint" title="Løs 3 opgaver uden hint">
+        <span class="ach-icon">🧠</span> Ingen hints
+      </div>
+      <div class="ach-item" id="ach-level5" title="Nå niveau 5">
+        <span class="ach-icon">🚀</span> Niveau 5
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── State ───────────────────────────────────────────────────────────────────
+let state = {
+  level: 'easy',
+  xp: 0,
+  playerLevel: 1,
+  streak: 0,
+  totalSolved: 0,
+  solved: { easy: 0, medium: 0, hard: 0 },
+  eqCount: 0,
+  currentEq: null,
+  hintUsed: false,
+  noHintStreak: 0,
+  achievements: {}
+};
+
+const XP_PER_LEVEL = [0, 100, 250, 450, 700, 1000, 1400, 1900, 2500, 3200, 4000];
+const XP_REWARDS = { easy: 20, medium: 40, hard: 70 };
+const STREAK_BONUS = [0, 0, 10, 15, 20, 30];
+
+// ─── Equation generators ─────────────────────────────────────────────────────
+function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+function generateEasy() {
+  const type = rand(1, 3);
+  let eq, answer, steps;
+  if (type === 1) {
+    // x + a = b
+    const a = rand(1, 20), b = rand(a + 1, 30);
+    answer = b - a;
+    eq = `x + ${a} = ${b}`;
+    steps = [
+      `Start: x + ${a} = ${b}`,
+      `Træk ${a} fra begge sider`,
+      `x = ${b} − ${a}`,
+      `x = ${answer}`
+    ];
+  } else if (type === 2) {
+    // x - a = b
+    const a = rand(1, 15), b = rand(1, 20);
+    answer = b + a;
+    eq = `x − ${a} = ${b}`;
+    steps = [
+      `Start: x − ${a} = ${b}`,
+      `Læg ${a} til begge sider`,
+      `x = ${b} + ${a}`,
+      `x = ${answer}`
+    ];
+  } else {
+    // a + x = b
+    const a = rand(1, 15), b = rand(a + 1, 25);
+    answer = b - a;
+    eq = `${a} + x = ${b}`;
+    steps = [
+      `Start: ${a} + x = ${b}`,
+      `Træk ${a} fra begge sider`,
+      `x = ${b} − ${a}`,
+      `x = ${answer}`
+    ];
+  }
+  return { eq, answer, steps };
+}
+
+function generateMedium() {
+  const type = rand(1, 4);
+  let eq, answer, steps;
+  if (type === 1) {
+    // ax = b
+    const a = rand(2, 9), answer_ = rand(2, 12);
+    const b = a * answer_;
+    answer = answer_;
+    eq = `${a}x = ${b}`;
+    steps = [
+      `Start: ${a}x = ${b}`,
+      `Del begge sider med ${a}`,
+      `x = ${b} ÷ ${a}`,
+      `x = ${answer}`
+    ];
+  } else if (type === 2) {
+    // ax + b = c
+    const a = rand(2, 6), b = rand(1, 10), answer_ = rand(1, 10);
+    const c = a * answer_ + b;
+    answer = answer_;
+    eq = `${a}x + ${b} = ${c}`;
+    steps = [
+      `Start: ${a}x + ${b} = ${c}`,
+      `Træk ${b} fra begge sider: ${a}x = ${c - b}`,
+      `Del begge sider med ${a}`,
+      `x = ${answer}`
+    ];
+  } else if (type === 3) {
+    // ax - b = c
+    const a = rand(2, 6), b = rand(1, 10), answer_ = rand(2, 10);
+    const c = a * answer_ - b;
+    answer = answer_;
+    eq = `${a}x − ${b} = ${c}`;
+    steps = [
+      `Start: ${a}x − ${b} = ${c}`,
+      `Læg ${b} til begge sider: ${a}x = ${c + b}`,
+      `Del begge sider med ${a}`,
+      `x = ${answer}`
+    ];
+  } else {
+    // x/a = b
+    const a = rand(2, 8), b = rand(2, 10);
+    answer = a * b;
+    eq = `x ÷ ${a} = ${b}`;
+    steps = [
+      `Start: x ÷ ${a} = ${b}`,
+      `Gang begge sider med ${a}`,
+      `x = ${b} × ${a}`,
+      `x = ${answer}`
+    ];
+  }
+  return { eq, answer, steps };
+}
+
+function generateHard() {
+  const type = rand(1, 4);
+  let eq, answer, steps;
+  if (type === 1) {
+    // ax + b = cx + d
+    const a = rand(3, 8), b = rand(1, 15), c = rand(1, a - 1), answer_ = rand(1, 10);
+    const d = (a - c) * answer_ + b;
+    answer = answer_;
+    eq = `${a}x + ${b} = ${c}x + ${d}`;
+    steps = [
+      `Start: ${a}x + ${b} = ${c}x + ${d}`,
+      `Flyt x-led: ${a}x − ${c}x = ${d} − ${b}`,
+      `${a - c}x = ${d - b}`,
+      `x = ${d - b} ÷ ${a - c} = ${answer}`
+    ];
+  } else if (type === 2) {
+    // a(x + b) = c
+    const a = rand(2, 6), b = rand(1, 8), answer_ = rand(1, 10);
+    const c = a * (answer_ + b);
+    answer = answer_;
+    eq = `${a}(x + ${b}) = ${c}`;
+    steps = [
+      `Start: ${a}(x + ${b}) = ${c}`,
+      `Del begge sider med ${a}: x + ${b} = ${c / a}`,
+      `Træk ${b} fra begge sider`,
+      `x = ${answer}`
+    ];
+  } else if (type === 3) {
+    // ax + b = c(x + d) → expand
+    const a = rand(3, 7), b = rand(2, 12), c = rand(1, a - 1), answer_ = rand(1, 8);
+    const d = ((a - c) * answer_ + b) / c;
+    if (!Number.isInteger(d) || d < 1) {
+      return generateHard(); // retry
+    }
+    answer = answer_;
+    eq = `${a}x + ${b} = ${c}(x + ${d})`;
+    steps = [
+      `Start: ${a}x + ${b} = ${c}(x + ${d})`,
+      `Udvid parentes: ${a}x + ${b} = ${c}x + ${c * d}`,
+      `Flyt x-led: ${a - c}x = ${c * d - b}`,
+      `x = ${answer}`
+    ];
+  } else {
+    // x/a + b = c
+    const a = rand(2, 5), b = rand(1, 8), c = rand(b + 2, b + 12);
+    answer = (c - b) * a;
+    eq = `x ÷ ${a} + ${b} = ${c}`;
+    steps = [
+      `Start: x ÷ ${a} + ${b} = ${c}`,
+      `Træk ${b} fra begge sider: x ÷ ${a} = ${c - b}`,
+      `Gang begge sider med ${a}`,
+      `x = ${answer}`
+    ];
+  }
+  return { eq, answer, steps };
+}
+
+function generateEquation(level) {
+  if (level === 'easy') return generateEasy();
+  if (level === 'medium') return generateMedium();
+  return generateHard();
+}
+
+// ─── UI helpers ──────────────────────────────────────────────────────────────
+function setLevel(level, btn) {
+  state.level = level;
+  document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  newEquation();
+}
+
+function newEquation() {
+  state.eqCount++;
+  state.hintUsed = false;
+  state.currentEq = generateEquation(state.level);
+
+  const tagMap = { easy: '🌱 Let', medium: '🔥 Middel', hard: '💎 Svær' };
+  document.getElementById('eq-level-tag').className = `eq-level-tag ${state.level}`;
+  document.getElementById('eq-level-tag').textContent = tagMap[state.level];
+  document.getElementById('eq-number').textContent = `Opgave #${state.eqCount}`;
+
+  // Format equation with colored x
+  const raw = state.currentEq.eq;
+  const formatted = raw.replace(/x/g, '<span class="x">x</span>');
+  document.getElementById('eq-display').innerHTML = formatted;
+
+  const input = document.getElementById('answer-input');
+  input.value = '';
+  input.className = 'answer-input';
+  input.focus();
+
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback';
+  fb.innerHTML = '';
+
+  // Animate card
+  const card = document.getElementById('eq-card');
+  card.style.animation = 'none';
+  card.offsetHeight;
+  card.style.animation = 'slideIn 0.4s ease';
+}
+
+function checkAnswer() {
+  const input = document.getElementById('answer-input');
+  const val = parseFloat(input.value);
+  if (input.value === '' || isNaN(val)) {
+    showFeedback('hint', '⚠️ Skriv et tal som svar!');
+    return;
+  }
+
+  const correct = val === state.currentEq.answer;
+  const fb = document.getElementById('feedback');
+
+  if (correct) {
+    input.className = 'answer-input correct';
+    const xpGained = calcXP();
+    addXP(xpGained);
+    state.streak++;
+    state.totalSolved++;
+    state.solved[state.level]++;
+    if (!state.hintUsed) state.noHintStreak++;
+    else state.noHintStreak = 0;
+
+    updateStats();
+    checkAchievements();
+
+    const msgs = [
+      '🎉 Korrekt! Godt arbejde!',
+      '⚡ Fantastisk! Du er på rette vej!',
+      '🌟 Perfekt! Fortsæt sådan!',
+      '🔥 Ja! Det er rigtigt!',
+      '💪 Imponerende! Du forstår det!'
+    ];
+    const msg = msgs[Math.floor(Math.random() * msgs.length)];
+
+    const streakMsg = state.streak >= 3 ? ` 🔥 ${state.streak} i træk!` : '';
+    showFeedback('correct', msg + streakMsg);
+
+    // Show celebration for milestones
+    if (state.totalSolved % 5 === 0 || state.streak === 3 || state.streak === 5) {
+      setTimeout(() => showCelebration(xpGained), 600);
+    }
+
+    launchConfetti();
+    setTimeout(() => newEquation(), 2000);
+  } else {
+    input.className = 'answer-input wrong';
+    state.streak = 0;
+    state.noHintStreak = 0;
+    updateStats();
+
+    const wrongMsgs = [
+      '❌ Ikke helt rigtigt – prøv igen!',
+      '🤔 Næsten! Tjek din udregning.',
+      '💡 Ikke denne gang – brug et hint hvis du sidder fast!'
+    ];
+    showFeedback('wrong', wrongMsgs[Math.floor(Math.random() * wrongMsgs.length)]);
+
+    setTimeout(() => { input.className = 'answer-input'; }, 1000);
+  }
+}
+
+function calcXP() {
+  const base = XP_REWARDS[state.level];
+  const bonus = STREAK_BONUS[Math.min(state.streak + 1, STREAK_BONUS.length - 1)] || 0;
+  const hintPenalty = state.hintUsed ? 0 : 5;
+  return base + bonus + hintPenalty;
+}
+
+function addXP(amount) {
+  state.xp += amount;
+  // Level up check
+  while (state.playerLevel < XP_PER_LEVEL.length - 1 &&
+         state.xp >= XP_PER_LEVEL[state.playerLevel]) {
+    state.playerLevel++;
+  }
+  updateXPBar();
+}
+
+function updateXPBar() {
+  const lvl = state.playerLevel;
+  const curr = XP_PER_LEVEL[lvl - 1] || 0;
+  const next = XP_PER_LEVEL[lvl] || XP_PER_LEVEL[XP_PER_LEVEL.length - 1];
+  const pct = Math.min(((state.xp - curr) / (next - curr)) * 100, 100);
+
+  document.getElementById('player-level').textContent = lvl;
+  document.getElementById('xp-current').textContent = state.xp;
+  document.getElementById('xp-next').textContent = next;
+  document.getElementById('xp-bar').style.width = pct + '%';
+}
+
+function updateStats() {
+  document.getElementById('streak-count').textContent = state.streak;
+  document.getElementById('total-badge').textContent = `✅ Løst: ${state.totalSolved}`;
+  document.getElementById('prog-easy').textContent = state.solved.easy;
+  document.getElementById('prog-medium').textContent = state.solved.medium;
+  document.getElementById('prog-hard').textContent = state.solved.hard;
+}
+
+function showHint() {
+  state.hintUsed = true;
+  const steps = state.currentEq.steps;
+  let html = '💡 <strong>Hint – trin for trin:</strong><div class="hint-steps">';
+  steps.forEach((s, i) => {
+    html += `<div class="hint-step"><span class="step-num">Trin ${i + 1}:</span>${s}</div>`;
+  });
+  html += '</div>';
+  showFeedback('hint', html);
+}
+
+function showFeedback(type, html) {
+  const fb = document.getElementById('feedback');
+  fb.className = `feedback ${type}`;
+  fb.innerHTML = html;
+}
+
+// ─── Achievements ─────────────────────────────────────────────────────────────
+function checkAchievements() {
+  const unlock = (id) => {
+    if (!state.achievements[id]) {
+      state.achievements[id] = true;
+      const el = document.getElementById(id);
+      if (el) el.classList.add('unlocked');
+    }
+  };
+  if (state.totalSolved >= 1) unlock('ach-first');
+  if (state.streak >= 3) unlock('ach-streak3');
+  if (state.streak >= 5) unlock('ach-streak5');
+  if (state.totalSolved >= 10) unlock('ach-10solved');
+  if (state.solved.medium >= 1) unlock('ach-medium');
+  if (state.solved.hard >= 1) unlock('ach-hard');
+  if (state.noHintStreak >= 3) unlock('ach-nohint');
+  if (state.playerLevel >= 5) unlock('ach-level5');
+}
+
+// ─── Celebration ─────────────────────────────────────────────────────────────
+function showCelebration(xp) {
+  const titles = ['Fantastisk! 🎉', 'Imponerende! ⚡', 'Du er på vej! 🚀', 'Godt klaret! 🌟'];
+  const msgs = [
+    `Du har løst ${state.totalSolved} opgaver i alt!`,
+    `${state.streak} korrekte svar i træk!`,
+    `Du er nu niveau ${state.playerLevel}!`,
+    `Bliv ved – du lærer mere og mere!`
+  ];
+  document.getElementById('cel-title').textContent = titles[Math.floor(Math.random() * titles.length)];
+  document.getElementById('cel-msg').textContent = msgs[Math.floor(Math.random() * msgs.length)];
+  document.getElementById('cel-xp').textContent = `+${xp} XP`;
+  document.getElementById('celebration').classList.add('show');
+}
+
+function closeCelebration() {
+  document.getElementById('celebration').classList.remove('show');
+}
+
+// ─── Confetti ─────────────────────────────────────────────────────────────────
+function launchConfetti() {
+  const canvas = document.getElementById('confetti-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const pieces = Array.from({ length: 80 }, () => ({
+    x: Math.random() * canvas.width,
+    y: -10,
+    r: Math.random() * 8 + 4,
+    d: Math.random() * 80 + 20,
+    color: ['#818cf8','#c084fc','#f472b6','#4ade80','#facc15','#f87171'][Math.floor(Math.random()*6)],
+    tilt: Math.random() * 10 - 10,
+    tiltAngle: 0,
+    tiltSpeed: Math.random() * 0.1 + 0.05
+  }));
+
+  let frame = 0;
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    pieces.forEach(p => {
+      p.tiltAngle += p.tiltSpeed;
+      p.y += Math.cos(frame / 20 + p.d) + 2;
+      p.x += Math.sin(frame / 20) * 1.5;
+      p.tilt = Math.sin(p.tiltAngle) * 12;
+      ctx.beginPath();
+      ctx.lineWidth = p.r / 2;
+      ctx.strokeStyle = p.color;
+      ctx.moveTo(p.x + p.tilt + p.r / 4, p.y);
+      ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r / 4);
+      ctx.stroke();
+    });
+    frame++;
+    if (frame < 120) requestAnimationFrame(draw);
+    else ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+  draw();
+}
+
+// ─── Stars background ─────────────────────────────────────────────────────────
+(function initStars() {
+  const canvas = document.getElementById('stars');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const stars = Array.from({ length: 120 }, () => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    r: Math.random() * 1.5 + 0.3,
+    alpha: Math.random(),
+    speed: Math.random() * 0.005 + 0.002
+  }));
+
+  function drawStars() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    stars.forEach(s => {
+      s.alpha += s.speed;
+      if (s.alpha > 1 || s.alpha < 0) s.speed *= -1;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,255,255,${s.alpha})`;
+      ctx.fill();
+    });
+    requestAnimationFrame(drawStars);
+  }
+  drawStars();
+
+  window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  });
+})();
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+newEquation();
+updateXPBar();
+</script>
+</body>
+</html>
