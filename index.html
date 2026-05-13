@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="da" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibe Coding - Inspiration til undervisningen</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        bauhaus: {
+                            red: '#D9381E',
+                            blue: '#005A9C',
+                            yellow: '#FFC72C',
+                            black: '#121212',
+                            white: '#F4F4F4',
+                            lightgray: '#E5E5E5',
+                            darkgray: '#1E1E1E'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['Space Mono', 'monospace'],
+                    },
+                    boxShadow: {
+                        'brutal-red': '6px 6px 0px 0px #D9381E',
+                        'brutal-blue': '6px 6px 0px 0px #005A9C',
+                        'brutal-yellow': '6px 6px 0px 0px #FFC72C',
+                        'brutal-black': '6px 6px 0px 0px #121212',
+                        'brutal-white': '6px 6px 0px 0px #F4F4F4',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+        
+        /* Custom scrollbar der passer til Bauhaus */
+        ::-webkit-scrollbar {
+            width: 14px;
+        }
+        ::-webkit-scrollbar-track {
+            background: theme('colors.bauhaus.white');
+            border-left: 3px solid theme('colors.bauhaus.black');
+        }
+        .dark ::-webkit-scrollbar-track {
+            background: theme('colors.bauhaus.black');
+            border-left: 3px solid theme('colors.bauhaus.white');
+        }
+        ::-webkit-scrollbar-thumb {
+            background: theme('colors.bauhaus.blue');
+            border: 3px solid theme('colors.bauhaus.black');
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: theme('colors.bauhaus.yellow');
+            border: 3px solid theme('colors.bauhaus.white');
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: theme('colors.bauhaus.red');
+        }
+
+        /* Toast notifikation & Animationer */
+        #toast {
+            visibility: hidden;
+            min-width: 250px;
+            margin-left: -125px;
+            background-color: theme('colors.bauhaus.blue');
+            color: theme('colors.bauhaus.white');
+            text-align: center;
+            border: 3px solid theme('colors.bauhaus.black');
+            padding: 16px;
+            position: fixed;
+            z-index: 50;
+            left: 50%;
+            bottom: 30px;
+            font-family: 'Space Mono', monospace;
+            font-size: 14px;
+            font-weight: bold;
+            text-transform: uppercase;
+            box-shadow: 6px 6px 0px 0px theme('colors.bauhaus.black');
+        }
+        
+        .dark #toast {
+            border-color: theme('colors.bauhaus.white');
+            box-shadow: 6px 6px 0px 0px theme('colors.bauhaus.white');
+        }
+
+        #toast.show {
+            visibility: visible;
+            -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+            animation: fadein 0.5s, fadeout 0.5s 2.5s;
+        }
+
+        @-webkit-keyframes fadein {
+            from {bottom: 0; opacity: 0;} 
+            to {bottom: 30px; opacity: 1;}
+        }
+
+        @keyframes fadein {
+            from {bottom: 0; opacity: 0;}
+            to {bottom: 30px; opacity: 1;}
+        }
+
+        @-webkit-keyframes fadeout {
+            from {bottom: 30px; opacity: 1;} 
+            to {bottom: 0; opacity: 0;}
+        }
+
+        @keyframes fadeout {
+            from {bottom: 30px; opacity: 1;}
+            to {bottom: 0; opacity: 0;}
+        }
+        
+        .boot-element {
+            opacity: 0;
+            transform: translateY(10px);
+            animation: bootIn 0.3s forwards ease-out;
+        }
+        
+        @keyframes bootIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body class="bg-bauhaus-lightgray text-bauhaus-black dark:bg-bauhaus-darkgray dark:text-bauhaus-white min-h-screen font-sans selection:bg-bauhaus-yellow selection:text-bauhaus-black">
+
+    <div class="flex flex-col lg:flex-row min-h-screen">
+        
+        <!-- VENSTRE PANEL: Kontrol & Info (Sticky på desktop) -->
+        <aside class="w-full lg:w-[400px] xl:w-[450px] lg:fixed lg:h-screen lg:overflow-y-auto border-b-[6px] lg:border-b-0 lg:border-r-[6px] border-bauhaus-black dark:border-bauhaus-white bg-bauhaus-white dark:bg-bauhaus-black z-20 flex flex-col">
+            
+            <div class="p-6 md:p-8 flex-1 flex flex-col">
+                <!-- Header & Theme Toggle -->
+                <div class="flex justify-between items-start mb-12">
+                    <div>
+                        <div class="font-mono text-xs text-bauhaus-red dark:text-bauhaus-yellow mb-2 font-bold">// LÆRER_TIL_LÆRER</div>
+                        <h1 class="text-4xl font-black tracking-tight text-bauhaus-black dark:text-bauhaus-white uppercase leading-none">
+                            Vibe<br>Coding
+                        </h1>
+                    </div>
+                    
+                    <button id="theme-toggle" class="group flex items-center justify-center border-[3px] border-bauhaus-black dark:border-bauhaus-white p-2 hover:bg-bauhaus-yellow dark:hover:bg-bauhaus-blue transition-colors" aria-label="Skift tema">
+                        <span class="font-mono text-xs font-bold hidden dark:block text-bauhaus-white">LIGHT</span>
+                        <span class="font-mono text-xs font-bold block dark:hidden text-bauhaus-black">DARK</span>
+                    </button>
+                </div>
+
+                <div class="mb-10">
+                    <p class="text-base text-bauhaus-black dark:text-bauhaus-white leading-relaxed font-medium">
+                        Gå på opdagelse i interaktive læremidler og værktøjer, kodet af andre lærere. Find inspiration til din egen undervisning, og brug materialet direkte i klassen.
+                    </p>
+                </div>
+
+                <!-- Søgning og Filtre -->
+                <div class="space-y-5 mt-auto lg:mt-0">
+                    <div>
+                        <label for="search-input" class="block font-mono text-xs font-bold mb-1 text-bauhaus-black dark:text-bauhaus-white uppercase">>> Søg_i_eksempler</label>
+                        <input type="text" id="search-input" placeholder="Titel, beskrivelse..." 
+                               class="w-full p-3 border-[3px] border-bauhaus-black dark:border-bauhaus-white bg-bauhaus-white dark:bg-bauhaus-black text-bauhaus-black dark:text-bauhaus-white placeholder-bauhaus-black/50 dark:placeholder-bauhaus-white/50 focus:outline-none focus:border-bauhaus-blue dark:focus:border-bauhaus-yellow transition-colors font-mono text-sm font-bold">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="subject-filter" class="block font-mono text-xs font-bold mb-1 text-bauhaus-black dark:text-bauhaus-white uppercase">>> Fag</label>
+                            <select id="subject-filter" class="w-full p-3 border-[3px] border-bauhaus-black dark:border-bauhaus-white bg-bauhaus-white dark:bg-bauhaus-black text-bauhaus-black dark:text-bauhaus-white focus:outline-none focus:border-bauhaus-red dark:focus:border-bauhaus-red transition-colors font-mono text-sm cursor-pointer appearance-none rounded-none font-bold">
+                                <option value="">Alle fag</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="level-filter" class="block font-mono text-xs font-bold mb-1 text-bauhaus-black dark:text-bauhaus-white uppercase">>> Afdeling</label>
+                            <select id="level-filter" class="w-full p-3 border-[3px] border-bauhaus-black dark:border-bauhaus-white bg-bauhaus-white dark:bg-bauhaus-black text-bauhaus-black dark:text-bauhaus-white focus:outline-none focus:border-bauhaus-blue dark:focus:border-bauhaus-blue transition-colors font-mono text-sm cursor-pointer appearance-none rounded-none font-bold">
+                                <option value="">Alle</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="sort-filter" class="block font-mono text-xs font-bold mb-1 text-bauhaus-black dark:text-bauhaus-white uppercase">>> Sortér</label>
+                            <select id="sort-filter" class="w-full p-3 border-[3px] border-bauhaus-black dark:border-bauhaus-white bg-bauhaus-white dark:bg-bauhaus-black text-bauhaus-black dark:text-bauhaus-white focus:outline-none focus:border-bauhaus-yellow dark:focus:border-bauhaus-yellow transition-colors font-mono text-sm cursor-pointer appearance-none rounded-none font-bold">
+                                <option value="nyeste">Nyeste først</option>
+                                <option value="alfabetisk">Alfabetisk</option>
+                            </select>
+                        </div>
+                        <div class="flex items-end">
+                            <button id="favorites-toggle" class="w-full p-3 border-[3px] border-bauhaus-black dark:border-bauhaus-white bg-bauhaus-lightgray dark:bg-bauhaus-darkgray text-bauhaus-black dark:text-bauhaus-white hover:bg-bauhaus-red hover:text-bauhaus-white dark:hover:bg-bauhaus-red transition-colors font-mono text-sm font-bold flex items-center justify-center gap-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] active:translate-y-1 active:translate-x-1 active:shadow-none">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                                Favoritter
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 pt-6 border-t-[3px] border-bauhaus-black dark:border-bauhaus-white">
+                    <p id="result-count" class="font-mono text-xs text-bauhaus-black dark:text-bauhaus-white font-bold mb-6">
+                        Indlæser system...
+                    </p>
+
+                    <a href="mailto:awt@gentofte.dk?subject=Nyt%20Vibe%20Coding%20Projekt&body=Titel%3A%20%0AFag%3A%20%0ALink%3A%20%0ABeskrivelse%3A%20" class="block w-full text-center p-3 mb-4 border-[3px] border-bauhaus-black dark:border-bauhaus-white bg-bauhaus-blue text-bauhaus-white hover:bg-bauhaus-red hover:text-bauhaus-white transition-colors font-mono text-sm font-bold uppercase shadow-brutal-black dark:shadow-brutal-white active:translate-y-1 active:translate-x-1 active:shadow-none">
+                        > Indsend_projekt()
+                    </a>
+
+                    <button id="about-vibe-btn" class="w-full text-center p-3 mb-6 border-[3px] border-bauhaus-black dark:border-bauhaus-white bg-bauhaus-yellow text-bauhaus-black hover:bg-bauhaus-blue hover:text-bauhaus-white dark:hover:bg-bauhaus-blue transition-colors font-mono text-sm font-bold uppercase shadow-brutal-black dark:shadow-brutal-white active:translate-y-1 active:translate-x-1 active:shadow-none">
+                        [?] Hvad_er_Vibe_Coding
+                    </button>
+
+                    <div class="font-mono text-[10px] text-bauhaus-black dark:text-bauhaus-white leading-relaxed">
+                        <p>Redaktør: <a href="mailto:awt@gentofte.dk" class="text-bauhaus-blue dark:text-bauhaus-yellow hover:underline font-bold text-xs">Anders Westermann</a></p>
+                        <p>Teknologiambassadør, Gentofte Kommune</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- HØJRE PANEL: Grid med resultater -->
+        <main class="flex-1 lg:ml-[400px] xl:ml-[450px] p-6 md:p-8 lg:p-12">
+            
+            <div id="grid-container" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8">
+                <!-- Kortene injiceres her via JavaScript -->
+            </div>
+
+            <!-- Nulstil besked -->
+            <div id="no-results" class="hidden h-full min-h-[40vh] flex-col items-center justify-center text-center">
+                <div class="font-mono text-6xl mb-4 text-bauhaus-red font-black">404</div>
+                <h3 class="text-2xl font-black text-bauhaus-black dark:text-bauhaus-white mb-2 uppercase">Ingen resultater</h3>
+                <p class="text-bauhaus-black dark:text-bauhaus-white mb-6 font-mono font-medium">Søgekriterierne returnerede et tomt array.</p>
+                <button id="reset-filters-btn" class="font-mono text-sm px-6 py-3 border-[3px] border-bauhaus-black dark:border-bauhaus-white bg-bauhaus-yellow dark:bg-bauhaus-blue text-bauhaus-black dark:text-bauhaus-white hover:bg-bauhaus-red dark:hover:bg-bauhaus-red hover:text-bauhaus-white dark:hover:text-bauhaus-white transition-colors font-bold uppercase shadow-brutal-black dark:shadow-brutal-white active:translate-y-1 active:translate-x-1 active:shadow-none">
+                    Reset_Filtre()
+                </button>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Toast besked for kopieret link -->
+    <div id="toast">Link kopieret!</div>
+
+    <!-- Hvad er Vibe Coding Modal -->
+    <div id="about-modal" class="fixed inset-0 bg-bauhaus-black/80 dark:bg-bauhaus-black/90 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-bauhaus-lightgray dark:bg-bauhaus-darkgray border-[6px] border-bauhaus-black dark:border-bauhaus-white max-w-2xl w-full shadow-[12px_12px_0px_0px_#D9381E] dark:shadow-[12px_12px_0px_0px_#FFC72C] transform transition-transform scale-95 opacity-0 duration-200" id="about-modal-content">
+            <!-- Modal Header -->
+            <div class="border-b-[6px] border-bauhaus-black dark:border-bauhaus-white px-4 py-3 flex justify-between items-center bg-bauhaus-yellow dark:bg-bauhaus-blue">
+                <span class="font-mono text-sm text-bauhaus-black dark:text-bauhaus-white font-black uppercase tracking-wider">
+                    README.txt // Vibe_Coding
+                </span>
+                <button id="close-modal-btn" class="text-bauhaus-black dark:text-bauhaus-white hover:scale-125 transition-transform">
+                    <svg class="w-6 h-6 font-bold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <!-- Modal Body -->
+            <div class="p-6 md:p-8 max-h-[75vh] overflow-y-auto">
+                <h2 class="text-3xl font-black mb-4 text-bauhaus-black dark:text-bauhaus-white uppercase">Kodning med naturligt sprog</h2>
+                
+                <div class="space-y-6 text-bauhaus-black dark:text-bauhaus-white text-base font-medium leading-relaxed">
+                    <p>
+                        "Vibe coding" er et begreb for at skabe software, spil og interaktive værktøjer <span class="bg-bauhaus-yellow text-bauhaus-black px-1 font-bold">uden at skrive en eneste linje kode selv</span>. I stedet bruger du en AI (som ChatGPT eller Claude) som din programmør, mens du agerer idémand og instruktør.
+                    </p>
+
+                    <div class="border-[3px] border-bauhaus-black dark:border-bauhaus-white p-5 bg-bauhaus-white dark:bg-bauhaus-black">
+                        <h3 class="font-mono font-bold text-bauhaus-blue dark:text-bauhaus-yellow mb-3 uppercase">>> Sådan kommer du i gang:</h3>
+                        <ol class="list-decimal list-inside space-y-3 font-mono text-sm">
+                            <li><strong class="font-sans">Få en pædagogisk idé:</strong> Hvad har dine elever brug for? Et stopur med en bestemt lyd? En interaktiv model af solsystemet?</li>
+                            <li><strong class="font-sans">Brug en AI:</strong> Åbn fx ChatGPT, Claude eller Gemini.</li>
+                            <li><strong class="font-sans">Skriv din prompt:</strong> Beskriv præcis hvad du vil have. Eks: <i>"Skriv en HTML fil med et interaktivt brøk-spil. Det skal være visuelt og pædagogisk."</i></li>
+                            <li><strong class="font-sans">Test og tilpas:</strong> Kopier koden, gem den som en .html fil, og åbn den i din browser. Bed AI'en om at rette fejl ("Gør knappen rød", "Gør teksten større").</li>
+                        </ol>
+                    </div>
+
+                    <p class="font-mono text-sm border-l-[4px] border-bauhaus-red pl-4">
+                        Det handler ikke om at forstå kodesproget. Det handler om at have den pædagogiske vision (the "vibe") og lade AI'en klare den tekniske byrde.
+                    </p>
+
+                    <div class="mt-4 p-4 border-[3px] border-bauhaus-black dark:border-bauhaus-white bg-bauhaus-lightgray dark:bg-bauhaus-black shadow-brutal-black dark:shadow-brutal-white">
+                        <p class="font-medium text-bauhaus-black dark:text-bauhaus-white text-sm">
+                            >> Kontakt SuperTekAmbassadør <a href="mailto:awt@gentofte.dk" class="font-bold text-bauhaus-blue dark:text-bauhaus-yellow hover:text-bauhaus-red dark:hover:text-bauhaus-red hover:underline transition-colors">Anders Westermann</a> for at høre om oplæg, workshops og sparring om vibe coding.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const examplesData = [
+            {
+                id: 1,
+                title: "Interaktiv Brøk-pizza",
+                description: "En visuel og interaktiv pizza-skærer til at hjælpe elever med at forstå addition og subtraktion af brøker på en sjov måde.",
+                subject: "Matematik",
+                level: "Mellemtrin",
+                author: "Jens Hansen",
+                url: "https://dit-github-navn.github.io/repo/broek.html",
+                date: "2026-05-10" // Tilføjet dato
+            },
+            {
+                id: 2,
+                title: "Den Store Vikinge-quiz",
+                description: "Test din viden om de danske vikinger. Spillet inkluderer pointtælling og uddybende forklaringer ved forkerte svar.",
+                subject: "Historie",
+                level: "Mellemtrin",
+                author: "Lise Jensen",
+                url: "https://dit-github-navn.github.io/repo/viking.html",
+                date: "2026-04-20"
+            },
+            {
+                id: 3,
+                title: "Celledeling Animation (Mitose)",
+                description: "En trin-for-trin visuel gennemgang af mitose. Eleven kan styre hastigheden og se hvad der sker med kromosomerne i hver fase.",
+                subject: "Biologi",
+                level: "Udskoling",
+                author: "Søren Kristensen",
+                url: "https://dit-github-navn.github.io/repo/celle.html",
+                date: "2026-03-15"
+            },
+            {
+                id: 4,
+                title: "Stavetræneren",
+                description: "Et simpelt værktøj hvor elever lytter til et ord og skal stave det korrekt. Særligt fokus på drilske vokaler.",
+                subject: "Dansk",
+                level: "Indskoling",
+                author: "Mette Nielsen",
+                url: "https://dit-github-navn.github.io/repo/stave.html",
+                date: "2026-04-01"
+            },
+            {
+                id: 5,
+                title: "Kredsløbs-byggeren",
+                description: "Træk og slip batterier, pærer og ledninger for at bygge et fungerende elektrisk kredsløb og lær om strøm.",
+                subject: "Fysik/Kemi",
+                level: "Udskoling",
+                author: "Anders Thomsen",
+                url: "https://dit-github-navn.github.io/repo/kredsloeb.html",
+                date: "2026-05-05" 
+            },
+            {
+                id: 6,
+                title: "Omsætning af Måleenheder",
+                description: "Træn omsætning mellem mm, cm, dm, m og km med en visuel trappemodel.",
+                subject: "Matematik",
+                level: "Mellemtrin",
+                author: "Jens Hansen",
+                url: "https://dit-github-navn.github.io/repo/maaling.html",
+                date: "2026-02-10"
+            }
+        ];
+
+        const gridContainer = document.getElementById('grid-container');
+        const searchInput = document.getElementById('search-input');
+        const subjectFilter = document.getElementById('subject-filter');
+        const levelFilter = document.getElementById('level-filter');
+        const sortFilter = document.getElementById('sort-filter');
+        const favoritesToggleBtn = document.getElementById('favorites-toggle');
+        const noResultsMessage = document.getElementById('no-results');
+        const resultCountMessage = document.getElementById('result-count');
+        const resetFiltersBtn = document.getElementById('reset-filters-btn');
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const toast = document.getElementById('toast');
+
+        let showFavoritesOnly = false;
+        let favorites = JSON.parse(localStorage.getItem('vibe-favorites')) || [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+            populateFilters();
+            runBootAnimation();
+            
+            searchInput.addEventListener('input', filterData);
+            subjectFilter.addEventListener('change', filterData);
+            levelFilter.addEventListener('change', filterData);
+            sortFilter.addEventListener('change', filterData);
+            resetFiltersBtn.addEventListener('click', resetFilters);
+            
+            favoritesToggleBtn.addEventListener('click', () => {
+                showFavoritesOnly = !showFavoritesOnly;
+                favoritesToggleBtn.classList.toggle('bg-bauhaus-red', showFavoritesOnly);
+                favoritesToggleBtn.classList.toggle('text-bauhaus-white', showFavoritesOnly);
+                filterData();
+            });
+        });
+
+        function runBootAnimation() {
+            // Sætter alle elementer i sidebaren til at "boote" ind 
+            const sidebarElements = document.querySelectorAll('aside > div > div');
+            sidebarElements.forEach((el, index) => {
+                el.classList.add('boot-element');
+                el.style.animationDelay = `${index * 0.15}s`;
+            });
+            
+            // Typemaskine-effekt
+            let text = "STATUS: SYSTEM_READY";
+            resultCountMessage.textContent = "";
+            let i = 0;
+            function typeWriter() {
+                if (i < text.length) {
+                    resultCountMessage.textContent += text.charAt(i);
+                    i++;
+                    setTimeout(typeWriter, 50);
+                } else {
+                    setTimeout(filterData, 200); // Tegner kortene til sidst!
+                }
+            }
+            setTimeout(typeWriter, 600);
+        }
+
+        function populateFilters() {
+            const subjects = [...new Set(examplesData.map(item => item.subject))].sort();
+            const levels = [...new Set(examplesData.map(item => item.level))].sort();
+
+            subjects.forEach(subject => {
+                const option = document.createElement('option');
+                option.value = subject;
+                option.textContent = subject;
+                subjectFilter.appendChild(option);
+            });
+
+            const sortOrder = {"Indskoling": 1, "Mellemtrin": 2, "Udskoling": 3};
+            levels.sort((a, b) => (sortOrder[a] || 99) - (sortOrder[b] || 99));
+
+            levels.forEach(level => {
+                const option = document.createElement('option');
+                option.value = level;
+                option.textContent = level;
+                levelFilter.appendChild(option);
+            });
+        }
+
+        function renderGrid(data) {
+            gridContainer.innerHTML = '';
+
+            if (data.length === 0) {
+                gridContainer.classList.add('hidden');
+                noResultsMessage.classList.remove('hidden');
+                resultCountMessage.textContent = 'STATUS: 0 MATCHES';
+                return;
+            }
+
+            gridContainer.classList.remove('hidden');
+            noResultsMessage.classList.add('hidden');
+            resultCountMessage.textContent = `STATUS: VISER ${data.length}/${examplesData.length} OBJEKTER`;
+
+            // Finde de 2 nyeste til NY! badget
+            const sortedByDate = [...examplesData].sort((a, b) => new Date(b.date) - new Date(a.date));
+            const newestIds = sortedByDate.slice(0, 2).map(item => item.id);
+
+            data.forEach((item, index) => {
+                const isFavorite = favorites.includes(item.id);
+                const isNew = newestIds.includes(item.id);
+
+                const cardWrapper = document.createElement('div');
+                cardWrapper.className = `boot-element block bg-bauhaus-white dark:bg-bauhaus-black border-[3px] border-bauhaus-black dark:border-bauhaus-white transition-all duration-200 hover:-translate-y-1 hover:-translate-x-1 hover:shadow-brutal-blue dark:hover:shadow-brutal-yellow flex flex-col h-full relative group`;
+                cardWrapper.style.animationDelay = `${index * 0.1}s`;
+
+                cardWrapper.innerHTML = `
+                    <!-- "Vindue" header med Favorit og Link-kopier knapper -->
+                    <div class="border-b-[3px] border-bauhaus-black dark:border-bauhaus-white px-3 py-2 flex justify-between items-center bg-bauhaus-lightgray dark:bg-bauhaus-darkgray group-hover:bg-bauhaus-red dark:group-hover:bg-bauhaus-red transition-colors">
+                        <span class="font-mono text-[10px] sm:text-xs text-bauhaus-black dark:text-bauhaus-white group-hover:text-bauhaus-white font-bold truncate pr-2">
+                            app_${item.id}.exe
+                        </span>
+                        <div class="flex gap-2 items-center">
+                            <button onclick="toggleFavorite(${item.id}, event)" class="focus:outline-none hover:scale-110 transition-transform" title="Tilføj til favoritter">
+                                <svg class="w-4 h-4 ${isFavorite ? 'text-bauhaus-yellow dark:text-bauhaus-yellow fill-current' : 'text-bauhaus-black dark:text-bauhaus-white group-hover:text-bauhaus-white'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                            </button>
+                            <button onclick="copyLink('${item.url}', event)" class="focus:outline-none hover:scale-110 transition-transform" title="Kopiér link">
+                                <svg class="w-4 h-4 text-bauhaus-black dark:text-bauhaus-white group-hover:text-bauhaus-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                            </button>
+                            <div class="w-3 h-3 border-[2px] border-bauhaus-black dark:border-bauhaus-white bg-bauhaus-yellow ml-1"></div>
+                        </div>
+                    </div>
+                    
+                    <a href="${item.url}" target="_blank" rel="noopener noreferrer" class="p-5 flex-1 flex flex-col outline-none cursor-pointer">
+                        <div class="flex flex-wrap gap-2 mb-4 relative">
+                            <span class="font-mono text-xs px-2 py-1 bg-bauhaus-yellow text-bauhaus-black border-[2px] border-bauhaus-black dark:border-bauhaus-white uppercase font-bold">
+                                ${item.subject}
+                            </span>
+                            <span class="font-mono text-xs px-2 py-1 bg-bauhaus-white dark:bg-bauhaus-black text-bauhaus-black dark:text-bauhaus-white border-[2px] border-bauhaus-black dark:border-bauhaus-white uppercase font-bold">
+                                ${item.level}
+                            </span>
+                            ${isNew ? `<span class="absolute right-0 font-mono text-xs px-2 py-1 bg-bauhaus-blue text-bauhaus-white border-[2px] border-bauhaus-black dark:border-bauhaus-white uppercase font-bold animate-pulse">NY!</span>` : ''}
+                        </div>
+                        
+                        <h3 class="text-xl font-black mb-3 text-bauhaus-black dark:text-bauhaus-white uppercase group-hover:text-bauhaus-blue dark:group-hover:text-bauhaus-yellow transition-colors">
+                            ${item.title}
+                        </h3>
+                        
+                        <p class="text-bauhaus-black dark:text-bauhaus-white text-sm flex-1 leading-relaxed font-medium">
+                            ${item.description}
+                        </p>
+                    </a>
+                    
+                    <!-- Footer -->
+                    <div class="px-5 py-3 border-t-[3px] border-bauhaus-black dark:border-bauhaus-white flex justify-between items-center mt-auto bg-bauhaus-white dark:bg-bauhaus-black pointer-events-none">
+                        <span class="font-mono text-xs text-bauhaus-black dark:text-bauhaus-white font-bold">
+                            > Udvikler: ${item.author}
+                        </span>
+                        <svg class="w-5 h-5 text-bauhaus-black dark:text-bauhaus-white group-hover:text-bauhaus-blue dark:group-hover:text-bauhaus-yellow transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                    </div>
+                `;
+                
+                gridContainer.appendChild(cardWrapper);
+            });
+        }
+
+        function filterData() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const selectedSubject = subjectFilter.value;
+            const selectedLevel = levelFilter.value;
+            const sortMode = sortFilter.value;
+
+            let filteredData = examplesData.filter(item => {
+                const matchesSearch = item.title.toLowerCase().includes(searchTerm) || 
+                                      item.description.toLowerCase().includes(searchTerm) ||
+                                      item.author.toLowerCase().includes(searchTerm);
+                
+                const matchesSubject = selectedSubject === "" || item.subject === selectedSubject;
+                const matchesLevel = selectedLevel === "" || item.level === selectedLevel;
+                const matchesFavorite = showFavoritesOnly ? favorites.includes(item.id) : true;
+
+                return matchesSearch && matchesSubject && matchesLevel && matchesFavorite;
+            });
+
+            // Gennemfør sortering
+            if (sortMode === 'nyeste') {
+                filteredData.sort((a, b) => new Date(b.date) - new Date(a.date));
+            } else if (sortMode === 'alfabetisk') {
+                filteredData.sort((a, b) => a.title.localeCompare(b.title));
+            }
+
+            renderGrid(filteredData);
+        }
+
+        window.toggleFavorite = function(id, event) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            if (favorites.includes(id)) {
+                favorites = favorites.filter(favId => favId !== id);
+            } else {
+                favorites.push(id);
+            }
+            
+            localStorage.setItem('vibe-favorites', JSON.stringify(favorites));
+            filterData(); // Genindlæser kortet for at opdatere hjerte-farven
+        };
+
+        window.copyLink = function(url, event) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            const tempInput = document.createElement("input");
+            tempInput.value = url;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand("copy");
+            document.body.removeChild(tempInput);
+            
+            // Viser "Link Kopieret" pop-up notifikationen (toast)
+            toast.className = "show";
+            setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3000);
+        };
+
+        // Modal logik
+        const aboutBtn = document.getElementById('about-vibe-btn');
+        const modal = document.getElementById('about-modal');
+        const modalContent = document.getElementById('about-modal-content');
+        const closeBtn = document.getElementById('close-modal-btn');
+
+        function openModal() {
+            modal.classList.remove('hidden');
+            // Lille forsinkelse for at CSS transitionen kan køre
+            setTimeout(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function closeModal() {
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 200); // Venter på at animationen er færdig
+        }
+
+        aboutBtn.addEventListener('click', openModal);
+        closeBtn.addEventListener('click', closeModal);
+        
+        // Luk modal hvis man klikker uden for boksen
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+        
+        // Luk på Escape-knap
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+                closeModal();
+            }
+        });
+
+        function resetFilters() {
+            searchInput.value = '';
+            subjectFilter.value = '';
+            levelFilter.value = '';
+            sortFilter.value = 'nyeste';
+            showFavoritesOnly = false;
+            favoritesToggleBtn.classList.remove('bg-bauhaus-red', 'text-bauhaus-white');
+            filterData();
+        }
+
+        function initTheme() {
+            if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches) || !localStorage.getItem('color-theme')) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        }
+
+        themeToggleBtn.addEventListener('click', function() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('color-theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('color-theme', 'dark');
+            }
+        });
+    </script>
+</body>
+</html>
