@@ -1,0 +1,3185 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fotosyntese Laboratorium - Interaktiv Læring</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            color: #fff;
+        }
+
+        .container {
+            max-width: 1500px;
+            margin: 0 auto;
+            padding: 15px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        header h1 {
+            font-size: 2.2rem;
+            background: linear-gradient(135deg, #4CAF50, #8BC34A, #CDDC39);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 420px;
+            gap: 20px;
+            align-items: start;
+        }
+
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ===== BADGES BAR ===== */
+        .badges-bar {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .badge-item {
+            background: rgba(255,255,255,0.05);
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 8px 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            opacity: 0.4;
+            transition: all 0.3s ease;
+        }
+
+        .badge-item.unlocked {
+            opacity: 1;
+            border-color: #FFD700;
+            background: rgba(255, 215, 0, 0.1);
+        }
+
+        .badge-item .badge-icon { font-size: 20px; }
+        .badge-item .badge-info { text-align: left; }
+        .badge-item .badge-name { font-weight: bold; color: #FFD700; }
+        .badge-item .badge-desc { font-size: 10px; color: rgba(255,255,255,0.5); }
+
+        /* ===== PLANT DISPLAY AREA ===== */
+        .plant-display-area {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* ===== PLANT CONTAINER - LARGER ===== */
+        .plant-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            border-radius: 25px;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            aspect-ratio: 16/10;
+            transition: all 0.3s ease;
+        }
+
+        /* Sky */
+        .sky {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 70%;
+            transition: all 2s ease;
+            overflow: hidden;
+        }
+
+        .sky.day {
+            background: linear-gradient(180deg, #1e90ff 0%, #87CEEB 30%, #B0E0E6 60%, #E0F7FA 100%);
+        }
+
+        .sky.night {
+            background: linear-gradient(180deg, #0a0a1a 0%, #1a1a3e 30%, #16213e 60%, #1a1a2e 100%);
+        }
+
+        .sky.sunset {
+            background: linear-gradient(180deg, #ff6b6b 0%, #ffa502 30%, #ffcc00 60%, #87CEEB 100%);
+        }
+
+        .sky.sunrise {
+            background: linear-gradient(180deg, #ff9a9e 0%, #fecfef 30%, #ffecd2 60%, #fcb69f 100%);
+        }
+
+        /* Clouds */
+        .clouds {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 200%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .cloud {
+            position: absolute;
+            background: rgba(255,255,255,0.8);
+            border-radius: 50px;
+            animation: cloudMove 60s linear infinite;
+        }
+
+        @keyframes cloudMove {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        /* Sun */
+        .sun {
+            position: absolute;
+            top: 30px;
+            left: 50px;
+            width: 90px;
+            height: 90px;
+            transition: all 2s ease;
+            z-index: 5;
+        }
+
+        .sun-core {
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, #fff 0%, #FFD700 30%, #FFA500 70%, transparent 100%);
+            border-radius: 50%;
+            animation: sunPulse 4s ease-in-out infinite;
+        }
+
+        .sun-corona {
+            position: absolute;
+            top: -35px;
+            left: -35px;
+            width: 160px;
+            height: 160px;
+            background: radial-gradient(circle, rgba(255, 200, 50, 0.4) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: coronaPulse 3s ease-in-out infinite;
+        }
+
+        .sun-rays {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            animation: rayRotate 120s linear infinite;
+        }
+
+        .sun-ray {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 150px;
+            height: 3px;
+            background: linear-gradient(90deg, rgba(255, 200, 50, 0.6), transparent);
+            transform-origin: left center;
+        }
+
+        @keyframes sunPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes coronaPulse {
+            0%, 100% { transform: scale(1); opacity: 0.6; }
+            50% { transform: scale(1.2); opacity: 0.8; }
+        }
+
+        @keyframes rayRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .sun.hidden { transform: translateY(200px) scale(0.5); opacity: 0; }
+
+        /* Moon */
+        .moon {
+            position: absolute;
+            top: 30px;
+            left: 50px;
+            width: 80px;
+            height: 80px;
+            transition: all 2s ease;
+            z-index: 5;
+        }
+
+        .moon-body {
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 30% 30%, #f5f5f5, #c9c9c9);
+            border-radius: 50%;
+            box-shadow: 0 0 30px rgba(255,255,255,0.3);
+            position: relative;
+        }
+
+        .crater {
+            position: absolute;
+            background: rgba(0,0,0,0.1);
+            border-radius: 50%;
+        }
+
+        .moon.hidden { transform: translateY(-200px) scale(0.5); opacity: 0; }
+
+        /* Stars */
+        .stars-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            transition: opacity 2s ease;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 2s ease-in-out infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        .shooting-star {
+            position: absolute;
+            width: 80px;
+            height: 2px;
+            background: linear-gradient(90deg, white, transparent);
+            animation: shootingStar 8s linear infinite;
+            opacity: 0;
+        }
+
+        @keyframes shootingStar {
+            0% { transform: translateX(0) translateY(0); opacity: 0; }
+            5% { opacity: 1; }
+            15% { transform: translateX(200px) translateY(100px); opacity: 0; }
+            100% { opacity: 0; }
+        }
+
+        /* Ground */
+        .ground {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 35%;
+            transition: all 1s ease;
+        }
+
+        .ground.normal {
+            background: linear-gradient(180deg, #5D4037 0%, #4E342E 30%, #3E2723 100%);
+        }
+
+        .ground.dry {
+            background: linear-gradient(180deg, #8D6E63 0%, #795548 30%, #5D4037 100%);
+            filter: brightness(1.2);
+        }
+
+        .ground.flooded {
+            background: linear-gradient(180deg, #3E2723 0%, #2E1B0F 30%, #1A0F08 100%);
+            filter: brightness(0.7);
+        }
+
+        .ground.desert {
+            background: linear-gradient(180deg, #D4A76A 0%, #C19A6B 30%, #A67C52 100%);
+        }
+
+        .ground.aquatic {
+            background: linear-gradient(180deg, #1a3a4a 0%, #0d2633 30%, #061820 100%);
+        }
+
+        /* ===== 3D PLANT - LARGER ===== */
+        .plant-3d {
+            position: absolute;
+            bottom: 30%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 350px;
+            height: 400px;
+            transition: all 0.5s ease;
+        }
+
+        /* Cactus */
+        .plant-3d.cactus {
+            width: 200px;
+            height: 350px;
+        }
+
+        .cactus-body {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 200px;
+            background: linear-gradient(90deg, #2E7D32, #43A047 30%, #66BB6A 50%, #43A047 70%, #2E7D32);
+            border-radius: 30px;
+            border: 3px solid #1B5E20;
+        }
+
+        .cactus-arm {
+            position: absolute;
+            width: 35px;
+            height: 80px;
+            background: linear-gradient(90deg, #2E7D32, #43A047 50%, #2E7D32);
+            border-radius: 20px;
+            border: 2px solid #1B5E20;
+        }
+
+        .cactus-arm.left {
+            left: 20px;
+            bottom: 100px;
+            transform: rotate(20deg);
+        }
+
+        .cactus-arm.right {
+            right: 20px;
+            bottom: 80px;
+            transform: rotate(-20deg);
+        }
+
+        .cactus-spine {
+            position: absolute;
+            width: 2px;
+            height: 8px;
+            background: #1B5E20;
+        }
+
+        .cactus-flower {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 20px;
+            background: linear-gradient(135deg, #FF69B4, #FFB6C1);
+            border-radius: 50%;
+        }
+
+        /* Water Lily */
+        .plant-3d.waterlily {
+            width: 300px;
+            height: 250px;
+            bottom: 20%;
+        }
+
+        .lily-pad {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 180px;
+            height: 80px;
+            background: radial-gradient(ellipse, #2E7D32, #1B5E20);
+            border-radius: 50%;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+
+        .lily-pad::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 30px;
+            height: 10px;
+            background: #1a3a4a;
+            transform: translateY(-50%);
+        }
+
+        .lily-flower {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .lily-petal {
+            position: absolute;
+            width: 25px;
+            height: 40px;
+            background: linear-gradient(135deg, #fff, #FFB6C1);
+            border-radius: 50%;
+            transform-origin: bottom center;
+        }
+
+        /* Fern/Shade plant */
+        .plant-3d.fern {
+            width: 300px;
+            height: 300px;
+        }
+
+        .frond {
+            position: absolute;
+            width: 120px;
+            height: 20px;
+            background: linear-gradient(90deg, #2E7D32, #66BB6A);
+            border-radius: 10px;
+            transform-origin: left center;
+        }
+
+        .frond-leaf {
+            position: absolute;
+            width: 20px;
+            height: 10px;
+            background: #43A047;
+            border-radius: 50%;
+        }
+
+        /* Wheat/Grain */
+        .plant-3d.wheat {
+            width: 250px;
+            height: 380px;
+        }
+
+        .wheat-stem {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 250px;
+            background: linear-gradient(180deg, #8BC34A, #689F38);
+            border-radius: 3px;
+        }
+
+        .wheat-head {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 60px;
+        }
+
+        .wheat-grain {
+            position: absolute;
+            width: 8px;
+            height: 15px;
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            border-radius: 50% 50% 50% 50%;
+            transform-origin: bottom center;
+        }
+
+        .wheat-leaf {
+            position: absolute;
+            width: 60px;
+            height: 12px;
+            background: linear-gradient(90deg, #8BC34A, #689F38);
+            border-radius: 6px;
+            transform-origin: left center;
+        }
+
+        /* Regular plant */
+        .stem-3d {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 220px;
+            background: linear-gradient(90deg, #1B5E20, #2E7D32 30%, #43A047 50%, #2E7D32 70%, #1B5E20);
+            border-radius: 10px;
+            box-shadow: inset -5px 0 10px rgba(0,0,0,0.3);
+            transform-origin: bottom center;
+            transition: all 0.5s ease;
+        }
+
+        .stem-3d.unhealthy { background: linear-gradient(90deg, #558B2F, #7CB342 30%, #8BC34A 50%, #7CB342 70%, #558B2F); }
+        .stem-3d.critical { background: linear-gradient(90deg, #9E9E9E, #BDBDBD 30%, #9E9E9E 50%, #757575 70%, #616161); transform: rotate(5deg); }
+        .stem-3d.dead { background: linear-gradient(90deg, #5D4037, #6D4C41 30%, #795548 50%, #6D4C41 70%, #5D4037); transform: rotate(15deg); opacity: 0.7; }
+
+        .leaf-3d {
+            position: absolute;
+            width: 90px;
+            height: 38px;
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            transition: all 0.5s ease;
+        }
+
+        .leaf-3d.healthy {
+            background: linear-gradient(135deg, #2E7D32, #43A047 30%, #66BB6A 50%, #43A047 70%, #2E7D32);
+            box-shadow: 0 5px 20px rgba(46, 125, 50, 0.4);
+        }
+
+        .leaf-3d.unhealthy { background: linear-gradient(135deg, #689F38, #8BC34A 30%, #9CCC65 50%, #8BC34A 70%, #689F38); }
+        .leaf-3d.critical { background: linear-gradient(135deg, #F9A825, #FBC02D 30%, #FFD54F 50%, #FBC02D 70%, #F9A825); }
+        .leaf-3d.dead { background: linear-gradient(135deg, #5D4037, #6D4C41 30%, #795548 50%, #6D4C41 70%, #5D4037); }
+
+        .leaf-row { position: absolute; left: 50%; transform: translateX(-50%); display: flex; justify-content: center; gap: 10px; }
+        .leaf-row-1 { bottom: 190px; }
+        .leaf-row-2 { bottom: 150px; }
+        .leaf-row-3 { bottom: 110px; }
+        .leaf-row-4 { bottom: 70px; }
+        .leaf-row-5 { bottom: 30px; }
+
+        .leaf-3d.left { transform: rotate(-30deg); }
+        .leaf-3d.right { transform: rotate(30deg); }
+        .leaf-3d.center-left { transform: rotate(-15deg); }
+        .leaf-3d.center-right { transform: rotate(15deg); }
+        .leaf-3d.top { transform: rotate(0deg) translateY(-10px); }
+
+        /* Flower */
+        .flower-3d {
+            position: absolute;
+            bottom: 210px;
+            left: 50%;
+            transform: translateX(-50%);
+            transition: all 0.5s ease;
+        }
+
+        .flower-petals {
+            position: relative;
+            width: 70px;
+            height: 70px;
+            animation: flowerSway 4s ease-in-out infinite;
+        }
+
+        @keyframes flowerSway {
+            0%, 100% { transform: rotate(-3deg); }
+            50% { transform: rotate(3deg); }
+        }
+
+        .petal {
+            position: absolute;
+            width: 28px;
+            height: 38px;
+            background: linear-gradient(135deg, #FF69B4, #FFB6C1);
+            border-radius: 50%;
+        }
+
+        .petal:nth-child(1) { transform: rotate(0deg) translateY(-18px); }
+        .petal:nth-child(2) { transform: rotate(72deg) translateY(-18px); }
+        .petal:nth-child(3) { transform: rotate(144deg) translateY(-18px); }
+        .petal:nth-child(4) { transform: rotate(216deg) translateY(-18px); }
+        .petal:nth-child(5) { transform: rotate(288deg) translateY(-18px); }
+
+        .flower-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 22px;
+            height: 22px;
+            background: radial-gradient(circle, #FFD700, #FFA500);
+            border-radius: 50%;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+        }
+
+        .flower-3d.hidden { transform: translateX(-50%) scale(0); opacity: 0; }
+
+        /* ===== WATER TRANSPORT ===== */
+        .water-transport {
+            position: absolute;
+            bottom: 35%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 220px;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .water-drop-transport {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: radial-gradient(circle, #64B5F6, #2196F3);
+            border-radius: 50%;
+            animation: waterRise 4s ease-in-out infinite;
+            box-shadow: 0 0 8px #64B5F6;
+        }
+
+        @keyframes waterRise {
+            0% { transform: translateY(220px); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(0); opacity: 0; }
+        }
+
+        /* ===== CO2 INTAKE ===== */
+        .co2-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 12;
+        }
+
+        .co2-molecule {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #78909C;
+            animation: co2Enter var(--duration, 4s) ease-out forwards;
+            text-shadow: 0 0 5px rgba(255,255,255,0.5);
+        }
+
+        .co2-molecule .c { color: #424242; font-size: 14px; }
+        .co2-molecule .o { color: #E57373; font-size: 12px; }
+
+        @keyframes co2Enter {
+            0% { opacity: 0; transform: translateX(var(--start-x, 100px)) translateY(var(--start-y, 0)) scale(0.5); }
+            20% { opacity: 1; }
+            80% { opacity: 0.8; }
+            100% { opacity: 0; transform: translateX(var(--end-x, 0px)) translateY(var(--end-y, 60px)) scale(0.8); }
+        }
+
+        /* ===== O2 BUBBLES ===== */
+        .o2-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        .o2-bubble {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: floatUp var(--duration, 4s) ease-out forwards;
+            opacity: 0;
+        }
+
+        .o2-bubble-outer {
+            width: var(--size, 55px);
+            height: var(--size, 55px);
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.95), rgba(135, 206, 250, 0.7) 30%, rgba(100, 180, 255, 0.5) 60%, transparent);
+            border-radius: 50%;
+            box-shadow: 0 0 25px rgba(100, 200, 255, 0.6), inset 0 0 15px rgba(255,255,255,0.4);
+            animation: bubbleWobble 1s ease-in-out infinite;
+        }
+
+        @keyframes bubbleWobble {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-3px); }
+            75% { transform: translateX(3px); }
+        }
+
+        .o2-text {
+            position: absolute;
+            font-size: 16px;
+            font-weight: bold;
+            color: #0277BD;
+            text-shadow: 0 0 5px rgba(255,255,255,0.9);
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 0; transform: translateY(0) scale(0.3); }
+            15% { opacity: 1; transform: translateY(-40px) scale(1); }
+            80% { opacity: 0.9; }
+            100% { opacity: 0; transform: translateY(-350px) scale(0.8); }
+        }
+
+        /* ===== CO2 BUBBLES (Night - Respiration) ===== */
+        .co2-bubble {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: floatUpSlow var(--duration, 5s) ease-out forwards;
+            opacity: 0;
+        }
+
+        .co2-bubble-outer {
+            width: var(--size, 45px);
+            height: var(--size, 45px);
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.8), rgba(158, 158, 158, 0.5) 30%, rgba(120, 144, 156, 0.3) 60%, transparent);
+            border-radius: 50%;
+            box-shadow: 0 0 15px rgba(158, 158, 158, 0.4);
+        }
+
+        .co2-bubble-text {
+            position: absolute;
+            font-size: 12px;
+            font-weight: bold;
+            color: #546E7A;
+            text-shadow: 0 0 3px rgba(255,255,255,0.7);
+        }
+
+        @keyframes floatUpSlow {
+            0% { opacity: 0; transform: translateY(0) scale(0.3); }
+            20% { opacity: 1; transform: translateY(-30px) scale(1); }
+            80% { opacity: 0.8; }
+            100% { opacity: 0; transform: translateY(-280px) scale(0.7); }
+        }
+
+        /* ===== O2 INTAKE (Night - Respiration) ===== */
+        .o2-intake {
+            position: absolute;
+            font-size: 14px;
+            font-weight: bold;
+            color: #64B5F6;
+            animation: o2Intake 4s ease-in-out forwards;
+            text-shadow: 0 0 5px rgba(100, 181, 246, 0.5);
+        }
+
+        @keyframes o2Intake {
+            0% { opacity: 0; transform: translateY(-50px) scale(0.5); }
+            20% { opacity: 1; }
+            80% { opacity: 0.8; }
+            100% { opacity: 0; transform: translateY(60px) scale(1); }
+        }
+
+        /* ===== GLUCOSE ===== */
+        .glucose-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 15;
+        }
+
+        .glucose-particle {
+            position: absolute;
+            font-size: 22px;
+            animation: glucoseFloat 5s ease-out forwards;
+            filter: drop-shadow(0 0 8px rgba(255, 200, 0, 0.6));
+        }
+
+        @keyframes glucoseFloat {
+            0% { opacity: 0; transform: translateY(0) scale(0) rotate(0deg); }
+            20% { opacity: 1; transform: translateY(-40px) scale(1.2) rotate(20deg); }
+            100% { opacity: 0; transform: translateY(-160px) translateX(40px) scale(0.5) rotate(360deg); }
+        }
+
+        /* ===== DISTURBANCES ===== */
+        .pollution-factory {
+            position: absolute;
+            top: 20px;
+            right: 25px;
+            opacity: 0;
+            transform: translateX(60px);
+            transition: all 0.5s ease;
+        }
+
+        .pollution-factory.active { opacity: 1; transform: translateX(0); }
+
+        .factory {
+            width: 100px;
+            height: 60px;
+            position: relative;
+        }
+
+        .factory-body {
+            position: absolute;
+            bottom: 0;
+            width: 80px;
+            height: 35px;
+            background: linear-gradient(180deg, #424242, #212121);
+            border-radius: 5px;
+        }
+
+        .factory-chimney {
+            position: absolute;
+            bottom: 30px;
+            left: 20px;
+            width: 18px;
+            height: 28px;
+            background: linear-gradient(90deg, #616161, #424242);
+            border-radius: 3px;
+        }
+
+        .smoke-particle {
+            position: absolute;
+            background: radial-gradient(circle, rgba(80,80,80,0.8), transparent);
+            border-radius: 50%;
+            animation: smokeRise 3s ease-out infinite;
+        }
+
+        @keyframes smokeRise {
+            0% { transform: translateY(0) scale(1); opacity: 0.8; }
+            100% { transform: translateY(-100px) scale(2.5); opacity: 0; }
+        }
+
+        .toxic-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 70%;
+            background: rgba(100, 100, 100, 0.3);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+
+        .toxic-overlay.active { opacity: 1; }
+
+        .rain-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .rain-container.active { opacity: 1; }
+
+        .acid-raindrop {
+            position: absolute;
+            width: 3px;
+            height: 20px;
+            background: linear-gradient(180deg, transparent, #76FF03, #64DD17);
+            border-radius: 0 0 3px 3px;
+            animation: acidFall 0.6s linear infinite;
+            box-shadow: 0 0 6px #76FF03;
+        }
+
+        @keyframes acidFall {
+            0% { transform: translateY(-25px); opacity: 0; }
+            10% { opacity: 1; }
+            100% { transform: translateY(400px); opacity: 0.7; }
+        }
+
+        .acid-splatter {
+            position: absolute;
+            bottom: 30%;
+            width: 100%;
+            height: 35%;
+            background: linear-gradient(180deg, transparent, rgba(118, 255, 3, 0.15));
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .acid-splatter.active { opacity: 1; }
+
+        .pests-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .pest {
+            position: absolute;
+            font-size: 20px;
+            animation: pestMove 3s ease-in-out infinite;
+        }
+
+        @keyframes pestMove {
+            0%, 100% { transform: translate(0, 0); }
+            25% { transform: translate(10px, 5px); }
+            50% { transform: translate(0, 10px); }
+            75% { transform: translate(-10px, 5px); }
+        }
+
+        .herbicide-effect {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, transparent 30%, rgba(139, 0, 139, 0.15) 100%);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .herbicide-effect.active { opacity: 1; }
+
+        .heat-waves {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        .heat-waves.active { opacity: 0.5; }
+
+        .heat-wave {
+            position: absolute;
+            width: 100%;
+            height: 50px;
+            background: linear-gradient(180deg, transparent, rgba(255, 100, 50, 0.15), transparent);
+            animation: heatWaveMove 2s ease-in-out infinite;
+        }
+
+        @keyframes heatWaveMove {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(25px); }
+        }
+
+        .frost-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, transparent 20%, rgba(200, 230, 255, 0.3) 100%);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .frost-overlay.active { opacity: 1; }
+
+        .frost-particle {
+            position: absolute;
+            color: rgba(200, 230, 255, 0.9);
+            font-size: 20px;
+            animation: frostFloat 5s ease-in-out infinite;
+        }
+
+        @keyframes frostFloat {
+            0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.5; }
+            50% { transform: translateY(-25px) rotate(180deg); opacity: 1; }
+        }
+
+        .drought-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, rgba(255, 200, 100, 0.15), rgba(255, 150, 50, 0.2));
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .drought-overlay.active { opacity: 1; }
+
+        /* ===== STATUS BADGE ===== */
+        .status-badge {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 25px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 15px;
+            z-index: 30;
+            animation: badgePulse 2s ease-in-out infinite;
+            backdrop-filter: blur(5px);
+        }
+
+        .status-badge.optimal { background: rgba(76, 175, 80, 0.9); box-shadow: 0 0 25px rgba(76, 175, 80, 0.6); }
+        .status-badge.reduced { background: rgba(255, 152, 0, 0.9); box-shadow: 0 0 25px rgba(255, 152, 0, 0.6); }
+        .status-badge.critical { background: rgba(255, 87, 34, 0.9); box-shadow: 0 0 25px rgba(255, 87, 34, 0.6); }
+        .status-badge.stopped { background: rgba(244, 67, 54, 0.9); box-shadow: 0 0 25px rgba(244, 67, 54, 0.6); }
+        .status-badge.respiring { background: rgba(156, 39, 176, 0.9); box-shadow: 0 0 25px rgba(156, 39, 176, 0.6); }
+
+        @keyframes badgePulse {
+            0%, 100% { transform: translateX(-50%) scale(1); }
+            50% { transform: translateX(-50%) scale(1.03); }
+        }
+
+        /* ===== DAY/NIGHT CYCLE INDICATOR ===== */
+        .cycle-indicator {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.6);
+            padding: 8px 20px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 30;
+            font-size: 12px;
+        }
+
+        .cycle-icon {
+            font-size: 16px;
+        }
+
+        .cycle-bar {
+            width: 100px;
+            height: 6px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .cycle-progress {
+            height: 100%;
+            background: linear-gradient(90deg, #FFD700, #FFA500);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        .cycle-progress.night {
+            background: linear-gradient(90deg, #5C6BC0, #3F51B5);
+        }
+
+        /* ===== CONTROL PANEL ===== */
+        .control-panel {
+            background: rgba(30, 30, 50, 0.95);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            max-height: 88vh;
+            overflow-y: auto;
+        }
+
+        .control-panel::-webkit-scrollbar { width: 6px; }
+        .control-panel::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 3px; }
+        .control-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+
+        .control-panel h2 {
+            color: #4CAF50;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* ===== RESET BUTTON ===== */
+        .reset-section {
+            background: rgba(244, 67, 54, 0.1);
+            border: 1px solid rgba(244, 67, 54, 0.3);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .reset-section h3 {
+            color: #f44336;
+            font-size: 14px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .reset-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .reset-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .reset-btn.soft {
+            background: rgba(255, 152, 0, 0.2);
+            color: #FF9800;
+            border: 1px solid rgba(255, 152, 0, 0.5);
+        }
+
+        .reset-btn.soft:hover {
+            background: rgba(255, 152, 0, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .reset-btn.full {
+            background: linear-gradient(135deg, #f44336, #E91E63);
+            color: white;
+        }
+
+        .reset-btn.full:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(244, 67, 54, 0.4);
+        }
+
+        /* ===== PLANT TYPE SELECTOR ===== */
+        .plant-type-section {
+            background: rgba(76, 175, 80, 0.1);
+            border: 1px solid rgba(76, 175, 80, 0.3);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .plant-type-section h3 {
+            color: #4CAF50;
+            font-size: 14px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .plant-types {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .plant-type-btn {
+            padding: 12px 10px;
+            background: rgba(255,255,255,0.05);
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .plant-type-btn:hover {
+            border-color: rgba(76, 175, 80, 0.5);
+            background: rgba(76, 175, 80, 0.1);
+        }
+
+        .plant-type-btn.active {
+            border-color: #4CAF50;
+            background: rgba(76, 175, 80, 0.2);
+        }
+
+        .plant-type-btn .icon {
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+
+        .plant-type-btn .name {
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .plant-type-btn .optimal {
+            font-size: 9px;
+            color: rgba(255,255,255,0.5);
+            margin-top: 3px;
+        }
+
+        /* ===== DAY/NIGHT CYCLE CONTROL ===== */
+        .cycle-control {
+            background: rgba(33, 150, 243, 0.1);
+            border: 1px solid rgba(33, 150, 243, 0.3);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .cycle-control h3 {
+            color: #2196F3;
+            font-size: 14px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .cycle-toggle {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .cycle-btn {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            cursor: pointer;
+            color: white;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .cycle-btn.active {
+            border-color: currentColor;
+        }
+
+        .cycle-btn.day.active {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #333;
+            border-color: #FFD700;
+        }
+
+        .cycle-btn.night.active {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border-color: #5C6BC0;
+        }
+
+        .cycle-btn.auto.active {
+            background: linear-gradient(135deg, #5C6BC0, #3F51B5);
+            border-color: #5C6BC0;
+        }
+
+        .auto-speed {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .auto-speed label {
+            font-size: 11px;
+            color: rgba(255,255,255,0.7);
+        }
+
+        .speed-slider {
+            flex: 1;
+        }
+
+        /* ===== SOUND CONTROL ===== */
+        .sound-control {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 15px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .sound-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .sound-toggle input { display: none; }
+
+        .sound-icon {
+            font-size: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .sound-label {
+            font-size: 13px;
+        }
+
+        /* ===== TABS ===== */
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid rgba(255,255,255,0.1);
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 10px 15px;
+            text-align: center;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            font-size: 12px;
+            color: rgba(255,255,255,0.5);
+        }
+
+        .tab.active {
+            color: #4CAF50;
+            border-bottom-color: #4CAF50;
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .control-group {
+            margin-bottom: 18px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .control-group:last-child { border-bottom: none; }
+
+        .control-label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-weight: 500;
+            font-size: 13px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            -webkit-appearance: none;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            background: linear-gradient(135deg, #4CAF50, #8BC34A);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(76, 175, 80, 0.5);
+        }
+
+        .preset-buttons {
+            display: flex;
+            gap: 6px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .preset-btn {
+            padding: 6px 12px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            font-size: 11px;
+            cursor: pointer;
+            color: #fff;
+            transition: all 0.2s ease;
+        }
+
+        .preset-btn:hover { background: #4CAF50; border-color: #4CAF50; }
+
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 10px;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 45px;
+            height: 24px;
+        }
+
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255,255,255,0.1);
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        .toggle-switch input:checked + .toggle-slider { background: linear-gradient(135deg, #f44336, #E91E63); }
+        .toggle-switch input:checked + .toggle-slider:before { transform: translateX(21px); }
+
+        .catastrophe-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #f44336, #E91E63);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .catastrophe-btn:hover { transform: scale(1.02); }
+
+        /* ===== METERS ===== */
+        .meters {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .meter {
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .meter-label { font-size: 11px; color: rgba(255,255,255,0.5); margin-bottom: 5px; }
+        .meter-value { font-size: 22px; font-weight: bold; background: linear-gradient(135deg, #4CAF50, #8BC34A); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+        .meter-bar {
+            height: 5px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .meter-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        .meter-fill.green { background: linear-gradient(90deg, #4CAF50, #8BC34A); }
+        .meter-fill.yellow { background: linear-gradient(90deg, #FF9800, #FFC107); }
+        .meter-fill.red { background: linear-gradient(90deg, #f44336, #FF5722); }
+        .meter-fill.blue { background: linear-gradient(90deg, #2196F3, #03A9F4); }
+        .meter-fill.purple { background: linear-gradient(90deg, #9C27B0, #E91E63); }
+
+        /* ===== LIMITING FACTOR ===== */
+        .limiting-factor {
+            background: rgba(255, 87, 34, 0.1);
+            border: 1px solid rgba(255, 87, 34, 0.3);
+            border-radius: 10px;
+            padding: 12px;
+            margin-top: 15px;
+            font-size: 12px;
+        }
+
+        .limiting-factor-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 6px;
+            color: #FF5722;
+            font-weight: 600;
+        }
+
+        .limiting-factor-text { color: rgba(255,255,255,0.7); }
+        .limiting-factor-text em { color: #FF5722; font-style: normal; font-weight: bold; }
+
+        /* ===== RESPIRATION INFO ===== */
+        .respiration-info {
+            background: rgba(156, 39, 176, 0.1);
+            border: 1px solid rgba(156, 39, 176, 0.3);
+            border-radius: 10px;
+            padding: 12px;
+            margin-top: 15px;
+            font-size: 12px;
+            display: none;
+        }
+
+        .respiration-info.active { display: block; }
+
+        .respiration-info-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 6px;
+            color: #9C27B0;
+            font-weight: 600;
+        }
+
+        .respiration-info-text { color: rgba(255,255,255,0.7); line-height: 1.5; }
+
+        /* ===== FORMULA CARD ===== */
+        .formula-card {
+            background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(139, 195, 74, 0.1));
+            border-radius: 15px;
+            padding: 15px;
+            margin-top: 15px;
+            border: 1px solid rgba(76, 175, 80, 0.2);
+        }
+
+        .formula-card h3 {
+            color: #8BC34A;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+
+        .formula {
+            font-family: 'Times New Roman', serif;
+            font-size: 14px;
+            background: rgba(0,0,0,0.2);
+            padding: 12px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .formula .arrow { font-size: 22px; margin: 6px 0; color: #4CAF50; }
+
+        /* ===== CHALLENGES ===== */
+        .challenges-section h3 {
+            color: #FFD700;
+            margin-bottom: 12px;
+            font-size: 15px;
+        }
+
+        .challenge-card {
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .challenge-card:hover { border-color: rgba(255, 215, 0, 0.3); background: rgba(255, 215, 0, 0.05); }
+        .challenge-card.active { border-color: #FFD700; box-shadow: 0 0 20px rgba(255, 215, 0, 0.2); }
+        .challenge-card.completed { border-color: #4CAF50; background: rgba(76, 175, 80, 0.1); }
+
+        .challenge-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .challenge-title { font-weight: 600; font-size: 12px; }
+        .challenge-status { font-size: 16px; }
+
+        .challenge-description {
+            font-size: 11px;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 6px;
+        }
+
+        .challenge-target {
+            display: inline-block;
+            background: rgba(255, 215, 0, 0.1);
+            padding: 4px 10px;
+            border-radius: 10px;
+            font-size: 10px;
+            color: #FFD700;
+        }
+
+        .challenge-progress { margin-top: 8px; }
+
+        .challenge-progress-bar {
+            height: 5px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .challenge-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #FFD700, #FFA500);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        /* ===== HINTS ===== */
+        .hints-box {
+            background: linear-gradient(135deg, rgba(33, 150, 243, 0.1), rgba(3, 169, 244, 0.1));
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 15px;
+            border: 1px solid rgba(33, 150, 243, 0.3);
+        }
+
+        .hints-box h4 {
+            color: #03A9F4;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+
+        .hint-text {
+            font-size: 12px;
+            color: rgba(255,255,255,0.7);
+            line-height: 1.6;
+        }
+
+        .hint-text strong { color: #4CAF50; }
+        .hint-text em { color: #FFD700; font-style: normal; }
+
+        /* ===== PROGRESS TRACKER ===== */
+        .progress-tracker {
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 15px;
+        }
+
+        .progress-tracker-title {
+            font-size: 13px;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 10px;
+        }
+
+        .progress-bar-container {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 10px;
+        }
+
+        .progress-segment {
+            flex: 1;
+            height: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .progress-segment.completed { background: linear-gradient(90deg, #4CAF50, #8BC34A); }
+        .progress-segment.bronze { background: linear-gradient(90deg, #CD7F32, #D4A76A); }
+        .progress-segment.silver { background: linear-gradient(90deg, #A8A8A8, #C0C0C0); }
+        .progress-segment.gold { background: linear-gradient(90deg, #FFD700, #FFA500); }
+
+        .progress-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: rgba(255,255,255,0.5);
+        }
+
+        .progress-stats strong { color: #FFD700; }
+
+        /* ===== TROPHY CELEBRATION ===== */
+        .trophy-celebration {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.95);
+            padding: 40px 60px;
+            border-radius: 25px;
+            text-align: center;
+            z-index: 100;
+            display: none;
+            border: 3px solid #FFD700;
+        }
+
+        .trophy-celebration.show { display: block; animation: celebrationPop 0.5s ease-out; }
+
+        @keyframes celebrationPop {
+            0% { transform: translate(-50%, -50%) scale(0); }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        .trophy-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            animation: trophyBounce 1s ease-in-out infinite;
+        }
+
+        @keyframes trophyBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .trophy-title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #FFD700;
+            margin-bottom: 10px;
+        }
+
+        .trophy-text { color: rgba(255,255,255,0.7); margin-bottom: 20px; }
+
+        .trophy-btn {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #333;
+        }
+
+        .confetti {
+            position: fixed;
+            width: 12px;
+            height: 12px;
+            top: -10px;
+            animation: confettiFall 3s linear forwards;
+            z-index: 99;
+        }
+
+        @keyframes confettiFall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        /* ===== PLANT TYPE INFO MODAL ===== */
+        .plant-info-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(30, 30, 50, 0.98);
+            border-radius: 20px;
+            padding: 25px;
+            max-width: 400px;
+            width: 90%;
+            z-index: 100;
+            display: none;
+            border: 2px solid #4CAF50;
+        }
+
+        .plant-info-modal.show { display: block; }
+
+        .plant-info-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            color: white;
+        }
+
+        .plant-info-title {
+            font-size: 20px;
+            color: #4CAF50;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .plant-info-description {
+            font-size: 13px;
+            line-height: 1.6;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 15px;
+        }
+
+        .plant-needs {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 15px;
+        }
+
+        .plant-needs h4 {
+            font-size: 12px;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 10px;
+        }
+
+        .need-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 12px;
+        }
+
+        .need-item span:first-child { display: flex; align-items: center; gap: 8px; }
+        .need-bar {
+            width: 80px;
+            height: 6px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .need-fill { height: 100%; background: #4CAF50; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌱 Fotosyntese Laboratorium</h1>
+        </header>
+
+        <!-- Badges Bar -->
+        <div class="badges-bar" id="badgesBar">
+            <div class="badge-item" id="badge-first"><span class="badge-icon">🌟</span><div class="badge-info"><div class="badge-name">Første Fotosyntese</div><div class="badge-desc">Opnå 50% rate</div></div></div>
+            <div class="badge-item" id="badge-scientist"><span class="badge-icon">🔬</span><div class="badge-info"><div class="badge-name">Videnskabsmand</div><div class="badge-desc">5 udfordringer</div></div></div>
+            <div class="badge-item" id="badge-survivor"><span class="badge-icon">🛡️</span><div class="badge-info"><div class="badge-name">Overlever</div><div class="badge-desc">Klar katastrofe</div></div></div>
+            <div class="badge-item" id="badge-expert"><span class="badge-icon">🏆</span><div class="badge-info"><div class="badge-name">Ekspert</div><div class="badge-desc">Alle udfordringer</div></div></div>
+            <div class="badge-item" id="badge-speed"><span class="badge-icon">⏱️</span><div class="badge-info"><div class="badge-name">Speed Run</div><div class="badge-desc">30 sek pr. udfordring</div></div></div>
+        </div>
+
+        <div class="main-content">
+            <!-- Plant Display Area -->
+            <div class="plant-display-area">
+                <!-- Main Plant Container -->
+                <div class="plant-container" id="plantContainer">
+                    <div class="sky day" id="sky"></div>
+                    <div class="clouds" id="clouds"></div>
+                    <div class="stars-container" id="starsContainer" style="opacity: 0;"></div>
+                    <div class="sun" id="sun">
+                        <div class="sun-corona"></div>
+                        <div class="sun-core"></div>
+                        <div class="sun-rays" id="sunRays"></div>
+                    </div>
+                    <div class="moon hidden" id="moon">
+                        <div class="moon-body">
+                            <div class="crater" style="width: 12px; height: 12px; top: 15px; left: 10px;"></div>
+                            <div class="crater" style="width: 8px; height: 8px; top: 30px; left: 35px;"></div>
+                        </div>
+                    </div>
+                    <div class="toxic-overlay" id="toxicOverlay"></div>
+                    <div class="pollution-factory" id="pollutionFactory">
+                        <div class="factory">
+                            <div class="factory-chimney"></div>
+                            <div class="factory-body"></div>
+                        </div>
+                    </div>
+                    <div class="rain-container" id="rainContainer"></div>
+                    <div class="acid-splatter" id="acidSplatter"></div>
+                    <div class="herbicide-effect" id="herbicideEffect"></div>
+                    <div class="heat-waves" id="heatWaves">
+                        <div class="heat-wave" style="top: 20%;"></div>
+                        <div class="heat-wave" style="top: 40%;"></div>
+                    </div>
+                    <div class="frost-overlay" id="frostOverlay"></div>
+                    <div class="drought-overlay" id="droughtOverlay"></div>
+                    <div class="ground normal" id="ground"></div>
+                    <div class="water-transport" id="waterTransport"></div>
+                    <div class="co2-container" id="co2Container"></div>
+                    <div class="o2-container" id="o2Container"></div>
+                    <div class="glucose-container" id="glucoseContainer"></div>
+                    <div class="pests-container" id="pestsContainer"></div>
+
+                    <!-- Regular Plant (default) -->
+                    <div class="plant-3d" id="plant3d">
+                        <div class="stem-3d" id="stem"></div>
+                        <div class="leaf-row leaf-row-5">
+                            <div class="leaf-3d healthy left"></div>
+                            <div class="leaf-3d healthy center-left"></div>
+                            <div class="leaf-3d healthy center-right"></div>
+                            <div class="leaf-3d healthy right"></div>
+                        </div>
+                        <div class="leaf-row leaf-row-4">
+                            <div class="leaf-3d healthy left"></div>
+                            <div class="leaf-3d healthy right"></div>
+                        </div>
+                        <div class="leaf-row leaf-row-3">
+                            <div class="leaf-3d healthy left"></div>
+                            <div class="leaf-3d healthy right"></div>
+                        </div>
+                        <div class="leaf-row leaf-row-2">
+                            <div class="leaf-3d healthy left"></div>
+                            <div class="leaf-3d healthy right"></div>
+                        </div>
+                        <div class="leaf-row leaf-row-1">
+                            <div class="leaf-3d healthy top"></div>
+                        </div>
+                        <div class="flower-3d" id="flower">
+                            <div class="flower-petals">
+                                <div class="petal"></div>
+                                <div class="petal"></div>
+                                <div class="petal"></div>
+                                <div class="petal"></div>
+                                <div class="petal"></div>
+                                <div class="flower-center"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cactus -->
+                    <div class="plant-3d cactus" id="cactusPlant" style="display: none;">
+                        <div class="cactus-body" id="cactusBody"></div>
+                        <div class="cactus-arm left"></div>
+                        <div class="cactus-arm right"></div>
+                        <div class="cactus-flower" id="cactusFlower"></div>
+                    </div>
+
+                    <!-- Water Lily -->
+                    <div class="plant-3d waterlily" id="waterlilyPlant" style="display: none;">
+                        <div class="lily-pad"></div>
+                        <div class="lily-flower" id="lilyFlower"></div>
+                    </div>
+
+                    <!-- Fern -->
+                    <div class="plant-3d fern" id="fernPlant" style="display: none;">
+                        <div id="fronds"></div>
+                    </div>
+
+                    <!-- Wheat -->
+                    <div class="plant-3d wheat" id="wheatPlant" style="display: none;">
+                        <div class="wheat-stem"></div>
+                        <div class="wheat-head" id="wheatHead"></div>
+                    </div>
+
+                    <div class="status-badge optimal" id="statusBadge">🌟 Optimal Fotosyntese!</div>
+                    
+                    <!-- Cycle Indicator -->
+                    <div class="cycle-indicator" id="cycleIndicator">
+                        <span class="cycle-icon" id="cycleIcon">☀️</span>
+                        <div class="cycle-bar">
+                            <div class="cycle-progress" id="cycleProgress" style="width: 50%"></div>
+                        </div>
+                        <span id="cycleTime">12:00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Control Panel -->
+            <div class="control-panel">
+                <h2>🎛️ Kontroller</h2>
+
+                <!-- Reset Section -->
+                <div class="reset-section">
+                    <h3>🔄 Nulstil</h3>
+                    <div class="reset-buttons">
+                        <button class="reset-btn soft" onclick="softReset()">
+                            <span>⚙️</span> Nulstil kontroller
+                        </button>
+                        <button class="reset-btn full" onclick="fullReset()">
+                            <span>🗑️</span> Start helt forfra
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sound Control -->
+                <div class="sound-control">
+                    <label class="sound-toggle" onclick="toggleSound()">
+                        <input type="checkbox" id="soundToggle">
+                        <span class="sound-icon" id="soundIcon">🔇</span>
+                        <span class="sound-label">Lydeffekter</span>
+                    </label>
+                </div>
+
+                <!-- Plant Type Selector -->
+                <div class="plant-type-section">
+                    <h3>🌱 Vælg Plante</h3>
+                    <div class="plant-types">
+                        <div class="plant-type-btn active" data-type="normal" onclick="selectPlantType('normal')">
+                            <div class="icon">🌿</div>
+                            <div class="name">Normal Plante</div>
+                            <div class="optimal">Standard behov</div>
+                        </div>
+                        <div class="plant-type-btn" data-type="cactus" onclick="selectPlantType('cactus')">
+                            <div class="icon">🌵</div>
+                            <div class="name">Kaktus</div>
+                            <div class="optimal">Lavt vand</div>
+                        </div>
+                        <div class="plant-type-btn" data-type="waterlily" onclick="selectPlantType('waterlily')">
+                            <div class="icon">🪷</div>
+                            <div class="name">Åkande</div>
+                            <div class="optimal">Meget vand</div>
+                        </div>
+                        <div class="plant-type-btn" data-type="fern" onclick="selectPlantType('fern')">
+                            <div class="icon">🍃</div>
+                            <div class="name">Bregne</div>
+                            <div class="optimal">Lavt lys</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Day/Night Cycle Control -->
+                <div class="cycle-control">
+                    <h3>🌓 Døgn-cyklus</h3>
+                    <div class="cycle-toggle">
+                        <button class="cycle-btn day active" id="cycleDay" onclick="setCycleMode('day')">☀️ Dag</button>
+                        <button class="cycle-btn night" id="cycleNight" onclick="setCycleMode('night')">🌙 Nat</button>
+                        <button class="cycle-btn auto" id="cycleAuto" onclick="setCycleMode('auto')">▶️ Auto</button>
+                    </div>
+                    <div class="auto-speed" id="autoSpeed" style="display: none;">
+                        <label>Hastighed:</label>
+                        <input type="range" class="speed-slider" id="cycleSpeed" min="1" max="10" value="5" oninput="updateCycleSpeed(this.value)">
+                        <span id="speedLabel">30s = 24t</span>
+                    </div>
+                </div>
+
+                <!-- Progress Tracker -->
+                <div class="progress-tracker">
+                    <div class="progress-tracker-title">📈 Fremskridt</div>
+                    <div class="progress-bar-container" id="progressBarContainer"></div>
+                    <div class="progress-stats">
+                        <span>Udfordringer: <strong id="completedCount">0</strong>/11</span>
+                        <span>Badges: <strong id="badgeCount">0</strong>/5</span>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="tabs">
+                    <div class="tab active" onclick="showTab('environment')">☀️ Miljø</div>
+                    <div class="tab" onclick="showTab('disturbances')">⚠️ Forstyrrelser</div>
+                    <div class="tab" onclick="showTab('challenges')">🏆 Udfordringer</div>
+                </div>
+
+                <!-- Environment Tab -->
+                <div class="tab-content active" id="environmentTab">
+                    <div class="control-group">
+                        <div class="control-label"><span>☀️ Lysintensitet</span><span id="lightValue">70%</span></div>
+                        <input type="range" id="lightSlider" min="0" max="100" value="70" oninput="updateLight(this.value)">
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-label"><span>💧 Vand</span><span id="waterValue">60%</span></div>
+                        <input type="range" id="waterSlider" min="0" max="100" value="60" oninput="updateWater(this.value)">
+                        <div class="preset-buttons">
+                            <button class="preset-btn" onclick="setWater(15)">🏜️ Tørke</button>
+                            <button class="preset-btn" onclick="setWater(60)">Normal</button>
+                            <button class="preset-btn" onclick="setWater(95)">🌊 Oversvømm.</button>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-label"><span>🌫️ CO₂</span><span id="co2Value">50%</span></div>
+                        <input type="range" id="co2Slider" min="0" max="100" value="50" oninput="updateCO2(this.value)">
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-label"><span>🌡️ Temperatur</span><span id="tempValue">25°C</span></div>
+                        <input type="range" id="tempSlider" min="0" max="100" value="50" oninput="updateTemp(this.value)">
+                        <div class="preset-buttons">
+                            <button class="preset-btn" onclick="setTemp(10)">❄️ Kold</button>
+                            <button class="preset-btn" onclick="setTemp(50)">✨ Optimal</button>
+                            <button class="preset-btn" onclick="setTemp(90)">🔥 Varm</button>
+                        </div>
+                    </div>
+
+                    <div class="limiting-factor" id="limitingFactorBox">
+                        <div class="limiting-factor-header">📊 Liebigs Minimumslov</div>
+                        <div class="limiting-factor-text" id="limitingFactorText">Begrænsende faktor: <em>...</em></div>
+                    </div>
+
+                    <div class="respiration-info" id="respirationInfo">
+                        <div class="respiration-info-header">🌙 Respiration om natten</div>
+                        <div class="respiration-info-text">
+                            Om natten stopper fotosyntesen. Planten <em>ånder</em> nu: den optager O₂ og udåndes CO₂.
+                            Dette kaldes <em>celleånding</em> og sker i alle levende celler!
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Disturbances Tab -->
+                <div class="tab-content" id="disturbancesTab">
+                    <div class="toggle-group">
+                        <label>🏭 Luftforurening</label>
+                        <label class="toggle-switch"><input type="checkbox" id="pollutionToggle" onchange="updateDisturbance('pollution', this.checked)"><span class="toggle-slider"></span></label>
+                    </div>
+                    <div class="toggle-group">
+                        <label>🐛 Skadedyr</label>
+                        <label class="toggle-switch"><input type="checkbox" id="pestsToggle" onchange="updateDisturbance('pests', this.checked)"><span class="toggle-slider"></span></label>
+                    </div>
+                    <div class="toggle-group">
+                        <label>🌧️ Syre Regn</label>
+                        <label class="toggle-switch"><input type="checkbox" id="acidRainToggle" onchange="updateDisturbance('acidRain', this.checked)"><span class="toggle-slider"></span></label>
+                    </div>
+                    <div class="toggle-group">
+                        <label>☠️ Herbicider</label>
+                        <label class="toggle-switch"><input type="checkbox" id="herbicidesToggle" onchange="updateDisturbance('herbicides', this.checked)"><span class="toggle-slider"></span></label>
+                    </div>
+                    <div class="toggle-group">
+                        <label>🍂 Dårlig Jord</label>
+                        <label class="toggle-switch"><input type="checkbox" id="poorSoilToggle" onchange="updateDisturbance('poorSoil', this.checked)"><span class="toggle-slider"></span></label>
+                    </div>
+                    <button class="catastrophe-btn" onclick="triggerCatastrophe()">🌋 KATASTROFE-TILSTAND</button>
+                </div>
+
+                <!-- Challenges Tab -->
+                <div class="tab-content" id="challengesTab">
+                    <div class="challenges-section">
+                        <h3>🏆 Udfordringer</h3>
+                        
+                        <div class="challenge-card" id="challenge1" onclick="selectChallenge(1)">
+                            <div class="challenge-header"><span class="challenge-title">🌱 Første Skridt</span><span class="challenge-status" id="status1">⭕</span></div>
+                            <div class="challenge-description">Opnå din første fotosyntese over 50%</div>
+                            <div class="challenge-target">Mål: Fotosyntese > 50%</div>
+                            <div class="challenge-progress"><div class="challenge-progress-bar"><div class="challenge-progress-fill" id="progress1" style="width: 0%"></div></div></div>
+                        </div>
+
+                        <div class="challenge-card" id="challenge2" onclick="selectChallenge(2)">
+                            <div class="challenge-header"><span class="challenge-title">☀️ Optimal Fotosyntese</span><span class="challenge-status" id="status2">⭕</span></div>
+                            <div class="challenge-description">Opnå optimal fotosyntese med alle faktorer i balance</div>
+                            <div class="challenge-target">Mål: Fotosyntese > 80%</div>
+                            <div class="challenge-progress"><div class="challenge-progress-bar"><div class="challenge-progress-fill" id="progress2" style="width: 0%"></div></div></div>
+                        </div>
+
+                        <div class="challenge-card" id="challenge3" onclick="selectChallenge(3)">
+                            <div class="challenge-header"><span class="challenge-title">🌡️ Temperatur-ekspert</span><span class="challenge-status" id="status3">⭕</span></div>
+                            <div class="challenge-description">Find den optimale temperatur for fotosyntese</div>
+                            <div class="challenge-target">Mål: Fotosyntese > 80% ved 20-30°C</div>
+                            <div class="challenge-progress"><div class="challenge-progress-bar"><div class="challenge-progress-fill" id="progress3" style="width: 0%"></div></div></div>
+                        </div>
+
+                        <div class="challenge-card" id="challenge4" onclick="selectChallenge(4)">
+                            <div class="challenge-header"><span class="challenge-title">🏜️ Tørke-mester</span><span class="challenge-status" id="status4">⭕</span></div>
+                            <div class="challenge-description">Maksimer fotosyntese selv under tørke</div>
+                            <div class="challenge-target">Mål: ≥20% med vand ≤25%</div>
+                            <div class="challenge-progress"><div class="challenge-progress-bar"><div class="challenge-progress-fill" id="progress4" style="width: 0%"></div></div></div>
+                        </div>
+
+                        <div class="challenge-card" id="challenge5" onclick="selectChallenge(5)">
+                            <div class="challenge-header"><span class="challenge-title">🛡️ Forsvarer</span><span class="challenge-status" id="status5">⭕</span></div>
+                            <div class="challenge-description">Hold fotosyntesen kørende med 2 forstyrrelser</div>
+                            <div class="challenge-target">Mål: ≥25% med 2 forstyrrelser</div>
+                            <div class="challenge-progress"><div class="challenge-progress-bar"><div class="challenge-progress-fill" id="progress5" style="width: 0%"></div></div></div>
+                        </div>
+
+                        <div class="challenge-card" id="challenge6" onclick="selectChallenge(6)">
+                            <div class="challenge-header"><span class="challenge-title">🌙 Nat-forsker</span><span class="challenge-status" id="status6">⭕</span></div>
+                            <div class="challenge-description">Undersøg hvad der sker om natten</div>
+                            <div class="challenge-target">Mål: Fotosyntese = 0% om natten</div>
+                            <div class="challenge-progress"><div class="challenge-progress-bar"><div class="challenge-progress-fill" id="progress6" style="width: 0%"></div></div></div>
+                        </div>
+
+                        <div class="challenge-card" id="challenge7" onclick="selectChallenge(7)">
+                            <div class="challenge-header"><span class="challenge-title">🌵 Ørken-overlever</span><span class="challenge-status" id="status7">⭕</span></div>
+                            <div class="challenge-description">Brug kaktus og se hvordan den klarer tørke</div>
+                            <div class="challenge-target">Mål: Kaktus + vand ≤20% + rate > 30%</div>
+                            <div class="challenge-progress"><div class="challenge-progress-bar"><div class="challenge-progress-fill" id="progress7" style="width: 0%"></div></div></div>
+                        </div>
+
+                        <div class="challenge-card" id="challenge8" onclick="selectChallenge(8)">
+                            <div class="challenge-header"><span class="challenge-title">🪷 Vand-plante ekspert</span><span class="challenge-status" id="status8">⭕</span></div>
+                            <div class="challenge-description">Brug åkande og se dens vand-behov</div>
+                            <div class="challenge-target">Mål: Åkande + vand > 80% + rate > 70%</div>
+                            <div class="challenge-progress"><div class="challenge-progress-bar"><div class="challenge-progress-fill" id="progress8" style="width: 0%"></div></div></div>
+                        </div>
+
+                        <div class="challenge-card" id="challenge9" onclick="selectChallenge(9)">
+                            <div class="challenge-header"><span class="challenge-title">🍃 Skygge-ekspert</span><span class="challenge-status" id="status9">⭕</span></div>
+                            <div class="challenge-description">Brug bregne og se dens lavt lys-behov</div>
+                            <div class="challenge-target">Mål: Bregne + lys < 40% + rate > 50%</div>
+                            <div class="challenge-progress"><div class="challenge-progress-bar"><div class="challenge-progress-fill" id="progress9" style="width: 0%"></div></div></div>
+                        </div>
+
+                        <div class="challenge-card" id="challenge10" onclick="selectChallenge(10)">
+                            <div class="challenge-header"><span class="challenge-title">🌟 Liebig-mester</span><span class="challenge-status" id="status10">⭕</span></div>
+                            <div class="challenge-description">Demonstrer Liebigs minimumslov</div>
+                            <div class="challenge-target">Mål: Vis begrænsende faktor effekt</div>
+                            <div class="challenge-progress"><div class="challenge-progress-bar"><div class="challenge-progress-fill" id="progress10" style="width: 0%"></div></div></div>
+                        </div>
+
+                        <div class="challenge-card" id="challenge11" onclick="selectChallenge(11)">
+                            <div class="challenge-header"><span class="challenge-title">🏆 Perfektionist</span><span class="challenge-status" id="status11">⭕</span></div>
+                            <div class="challenge-description">Opnå næsten perfekt fotosyntese</div>
+                            <div class="challenge-target">Mål: Fotosyntese > 95%</div>
+                            <div class="challenge-progress"><div class="challenge-progress-bar"><div class="challenge-progress-fill" id="progress11" style="width: 0%"></div></div></div>
+                        </div>
+
+                        <!-- Hints -->
+                        <div class="hints-box">
+                            <h4>💡 Hint</h4>
+                            <div class="hint-text" id="hintText">Vælg en udfordring for at se hints...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Meters -->
+                <div class="meters">
+                    <div class="meter">
+                        <div class="meter-label">🌿 Fotosyntese</div>
+                        <div class="meter-value" id="rateValue">70%</div>
+                        <div class="meter-bar"><div class="meter-fill green" id="rateBar" style="width: 70%"></div></div>
+                    </div>
+                    <div class="meter">
+                        <div class="meter-label">🍬 Glukose</div>
+                        <div class="meter-value" id="glucoseValue">56%</div>
+                        <div class="meter-bar"><div class="meter-fill yellow" id="glucoseBar" style="width: 56%"></div></div>
+                    </div>
+                    <div class="meter">
+                        <div class="meter-label">💨 Ilt (O₂)</div>
+                        <div class="meter-value" id="oxygenValue">63%</div>
+                        <div class="meter-bar"><div class="meter-fill blue" id="oxygenBar" style="width: 63%"></div></div>
+                    </div>
+                    <div class="meter">
+                        <div class="meter-label">❤️ Helbred</div>
+                        <div class="meter-value" id="healthValue">70%</div>
+                        <div class="meter-bar"><div class="meter-fill green" id="healthBar" style="width: 70%"></div></div>
+                    </div>
+                </div>
+
+                <!-- Formula -->
+                <div class="formula-card">
+                    <h3>🔬 Fotosyntese-formlen</h3>
+                    <div class="formula">
+                        <div>6CO₂ + 6H₂O + lys</div>
+                        <div class="arrow">⬇️</div>
+                        <div>C₆H₁₂O₆ + 6O₂</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trophy Celebration -->
+    <div class="trophy-celebration" id="trophyCelebration">
+        <div class="trophy-icon">🏆</div>
+        <div class="trophy-title" id="trophyTitle">Udfordring fuldført!</div>
+        <div class="trophy-text" id="trophyText">Fantastisk!</div>
+        <button class="trophy-btn" onclick="closeCelebration()">Fortsæt</button>
+    </div>
+
+    <script>
+        // ===== STATE =====
+        let state = {
+            light: 70,
+            water: 60,
+            co2: 50,
+            temperature: 50,
+            dayNight: 'day',
+            pollution: false,
+            pests: false,
+            acidRain: false,
+            herbicides: false,
+            poorSoil: false
+        };
+
+        let plantType = 'normal';
+        let currentChallenge = null;
+        let completedChallenges = new Set();
+        let unlockedBadges = new Set();
+        let soundEnabled = false;
+        let cycleMode = 'day';
+        let cycleProgress = 0;
+        let cycleSpeed = 5;
+        let cycleInterval = null;
+
+        // Audio context for sounds
+        let audioContext = null;
+
+        // ===== PLANT TYPE CONFIGURATIONS =====
+        const plantConfigs = {
+            normal: {
+                name: 'Normal Plante',
+                lightNeed: 70,
+                waterNeed: 60,
+                co2Need: 50,
+                tempOptimal: 25,
+                waterTolerance: 0.3,
+                lightTolerance: 0.2
+            },
+            cactus: {
+                name: 'Kaktus',
+                lightNeed: 90,
+                waterNeed: 20,
+                co2Need: 40,
+                tempOptimal: 30,
+                waterTolerance: 0.8,
+                lightTolerance: 0.1
+            },
+            waterlily: {
+                name: 'Åkande',
+                lightNeed: 50,
+                waterNeed: 95,
+                co2Need: 60,
+                tempOptimal: 22,
+                waterTolerance: 0.1,
+                lightTolerance: 0.3
+            },
+            fern: {
+                name: 'Bregne',
+                lightNeed: 30,
+                waterNeed: 75,
+                co2Need: 40,
+                tempOptimal: 20,
+                waterTolerance: 0.2,
+                lightTolerance: 0.6
+            }
+        };
+
+        // ===== HINTS =====
+        const hints = {
+            1: `<strong>Hint:</strong> Sæt lys til 70%, vand til 60%, CO₂ til 50%, temperatur til optimal.`,
+            2: `<strong>Hint:</strong> Sæt alle faktorer til <em>70-100%</em> og temperatur til <em>optimal</em>.`,
+            3: `<strong>Hint:</strong> Den optimale temperatur er <em>20-30°C</em>. Brug "Optimal" knappen!`,
+            4: `<strong>Hint:</strong> Med vand på 25% kan fotosyntesen max blive 25%. Sæt alt andet til max!`,
+            5: `<strong>Hint:</strong> Vælg de mildeste forstyrrelser: Dårlig jord + Luftforurening.`,
+            6: `<strong>Hint:</strong> Klik på "Nat" eller "Auto" knappen for at gøre det nat.`,
+            7: `<strong>Hint:</strong> Vælg <em>🌵 Kaktus</em> og sæt vand til 20%. Kaktus er tilpasset tørke!`,
+            8: `<strong>Hint:</strong> Vælg <em>🪷 Åkande</em> og sæt vand til 80%+. Den elsker vand!`,
+            9: `<strong>Hint:</strong> Vælg <em>🍃 Bregne</em> og sæt lys under 40%. Den trives i skygge!`,
+            10: `<strong>Hint:</strong> Sænk én faktor til 20% og se effekten på fotosyntesen.`,
+            11: `<strong>Hint:</strong> Sæt lys, vand, CO₂ til 100% og temperatur optimal.`
+        };
+
+        // ===== DOM ELEMENTS =====
+        const elements = {
+            sky: document.getElementById('sky'),
+            sun: document.getElementById('sun'),
+            moon: document.getElementById('moon'),
+            starsContainer: document.getElementById('starsContainer'),
+            statusBadge: document.getElementById('statusBadge'),
+            stem: document.getElementById('stem'),
+            flower: document.getElementById('flower'),
+            leaves: document.querySelectorAll('#plant3d .leaf-3d'),
+            ground: document.getElementById('ground'),
+            o2Container: document.getElementById('o2Container'),
+            glucoseContainer: document.getElementById('glucoseContainer'),
+            rainContainer: document.getElementById('rainContainer'),
+            pestsContainer: document.getElementById('pestsContainer'),
+            pollutionFactory: document.getElementById('pollutionFactory'),
+            toxicOverlay: document.getElementById('toxicOverlay'),
+            acidSplatter: document.getElementById('acidSplatter'),
+            herbicideEffect: document.getElementById('herbicideEffect'),
+            heatWaves: document.getElementById('heatWaves'),
+            frostOverlay: document.getElementById('frostOverlay'),
+            droughtOverlay: document.getElementById('droughtOverlay'),
+            waterTransport: document.getElementById('waterTransport'),
+            co2Container: document.getElementById('co2Container'),
+            limitingFactorText: document.getElementById('limitingFactorText'),
+            hintText: document.getElementById('hintText'),
+            respirationInfo: document.getElementById('respirationInfo'),
+            cycleProgress: document.getElementById('cycleProgress'),
+            cycleIcon: document.getElementById('cycleIcon'),
+            cycleTime: document.getElementById('cycleTime'),
+            plant3d: document.getElementById('plant3d'),
+            cactusPlant: document.getElementById('cactusPlant'),
+            waterlilyPlant: document.getElementById('waterlilyPlant'),
+            fernPlant: document.getElementById('fernPlant'),
+            wheatPlant: document.getElementById('wheatPlant')
+        };
+
+        // ===== INITIALIZATION =====
+        function init() {
+            createStars();
+            createShootingStars();
+            createClouds();
+            createFrostParticles();
+            createSmokeParticles();
+            createWaterTransport();
+            createSunRays();
+            updateProgressBar();
+            updateAll();
+            startAnimations();
+        }
+
+        // ===== CREATE ELEMENTS =====
+        function createStars() {
+            for (let i = 0; i < 60; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.top = `${Math.random() * 70}%`;
+                star.style.width = `${Math.random() * 3 + 1}px`;
+                star.style.height = star.style.width;
+                star.style.animationDelay = `${Math.random() * 3}s`;
+                elements.starsContainer.appendChild(star);
+            }
+        }
+
+        function createShootingStars() {
+            for (let i = 0; i < 3; i++) {
+                const star = document.createElement('div');
+                star.className = 'shooting-star';
+                star.style.left = `${Math.random() * 50}%`;
+                star.style.top = `${Math.random() * 30}%`;
+                star.style.animationDelay = `${i * 4 + Math.random() * 3}s`;
+                elements.starsContainer.appendChild(star);
+            }
+        }
+
+        function createClouds() {
+            const cloudsContainer = document.getElementById('clouds');
+            for (let i = 0; i < 5; i++) {
+                const cloud = document.createElement('div');
+                cloud.className = 'cloud';
+                cloud.style.width = `${80 + Math.random() * 60}px`;
+                cloud.style.height = `${30 + Math.random() * 20}px`;
+                cloud.style.top = `${10 + Math.random() * 40}%`;
+                cloud.style.left = `${i * 40}%`;
+                cloud.style.animationDelay = `${i * -10}s`;
+                cloudsContainer.appendChild(cloud);
+            }
+        }
+
+        function createSunRays() {
+            const raysContainer = document.getElementById('sunRays');
+            for (let i = 0; i < 12; i++) {
+                const ray = document.createElement('div');
+                ray.className = 'sun-ray';
+                ray.style.transform = `rotate(${i * 30}deg)`;
+                ray.style.opacity = 0.3 + Math.random() * 0.3;
+                raysContainer.appendChild(ray);
+            }
+        }
+
+        function createFrostParticles() {
+            for (let i = 0; i < 20; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'frost-particle';
+                particle.textContent = '❄';
+                particle.style.left = `${Math.random() * 100}%`;
+                particle.style.top = `${Math.random() * 100}%`;
+                particle.style.animationDelay = `${Math.random() * 5}s`;
+                elements.frostOverlay.appendChild(particle);
+            }
+        }
+
+        function createSmokeParticles() {
+            const factory = document.querySelector('.factory');
+            for (let i = 0; i < 8; i++) {
+                const smoke = document.createElement('div');
+                smoke.className = 'smoke-particle';
+                smoke.style.width = `${20 + Math.random() * 15}px`;
+                smoke.style.height = smoke.style.width;
+                smoke.style.left = `${12 + (i % 2) * 28}px`;
+                smoke.style.bottom = '55px';
+                smoke.style.animationDelay = `${i * 0.4}s`;
+                factory.appendChild(smoke);
+            }
+        }
+
+        function createWaterTransport() {
+            for (let i = 0; i < 4; i++) {
+                const drop = document.createElement('div');
+                drop.className = 'water-drop-transport';
+                drop.style.animationDelay = `${i * 1}s`;
+                elements.waterTransport.appendChild(drop);
+            }
+        }
+
+        // ===== SOUND SYSTEM =====
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('soundToggle').checked = soundEnabled;
+            document.getElementById('soundIcon').textContent = soundEnabled ? '🔊' : '🔇';
+            
+            if (soundEnabled && !audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSound(type) {
+            if (!soundEnabled || !audioContext) return;
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            switch(type) {
+                case 'bubble':
+                    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(400, audioContext.currentTime + 0.1);
+                    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.1);
+                    break;
+                case 'success':
+                    oscillator.frequency.setValueAtTime(523, audioContext.currentTime);
+                    oscillator.frequency.setValueAtTime(659, audioContext.currentTime + 0.1);
+                    oscillator.frequency.setValueAtTime(784, audioContext.currentTime + 0.2);
+                    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.3);
+                    break;
+            }
+        }
+
+        // ===== PLANT TYPE SELECTION =====
+        function selectPlantType(type) {
+            plantType = type;
+            
+            // Update UI
+            document.querySelectorAll('.plant-type-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.type === type);
+            });
+            
+            // Hide all plants
+            elements.plant3d.style.display = 'none';
+            elements.cactusPlant.style.display = 'none';
+            elements.waterlilyPlant.style.display = 'none';
+            elements.fernPlant.style.display = 'none';
+            elements.wheatPlant.style.display = 'none';
+            
+            // Show selected plant
+            switch(type) {
+                case 'normal':
+                    elements.plant3d.style.display = 'block';
+                    elements.ground.className = 'ground normal';
+                    break;
+                case 'cactus':
+                    elements.cactusPlant.style.display = 'block';
+                    elements.ground.className = 'ground desert';
+                    break;
+                case 'waterlily':
+                    elements.waterlilyPlant.style.display = 'block';
+                    elements.ground.className = 'ground aquatic';
+                    break;
+                case 'fern':
+                    elements.fernPlant.style.display = 'block';
+                    elements.ground.className = 'ground normal';
+                    break;
+            }
+            
+            updateAll();
+        }
+
+        // ===== DAY/NIGHT CYCLE =====
+        function setCycleMode(mode) {
+            cycleMode = mode;
+            
+            document.getElementById('cycleDay').classList.toggle('active', mode === 'day');
+            document.getElementById('cycleNight').classList.toggle('active', mode === 'night');
+            document.getElementById('cycleAuto').classList.toggle('active', mode === 'auto');
+            document.getElementById('autoSpeed').style.display = mode === 'auto' ? 'flex' : 'none';
+            
+            if (mode === 'auto') {
+                startAutoCycle();
+            } else {
+                stopAutoCycle();
+                if (mode === 'day') {
+                    cycleProgress = 50;
+                    applyCycleState();
+                } else {
+                    cycleProgress = 0;
+                    applyCycleState();
+                }
+            }
+        }
+
+        function startAutoCycle() {
+            stopAutoCycle();
+            cycleInterval = setInterval(() => {
+                cycleProgress = (cycleProgress + 1) % 100;
+                applyCycleState();
+            }, 300 / cycleSpeed);
+        }
+
+        function stopAutoCycle() {
+            if (cycleInterval) {
+                clearInterval(cycleInterval);
+                cycleInterval = null;
+            }
+        }
+
+        function updateCycleSpeed(value) {
+            cycleSpeed = parseInt(value);
+            const seconds = Math.round(300 / cycleSpeed);
+            document.getElementById('speedLabel').textContent = `${seconds}s = 24t`;
+            
+            if (cycleMode === 'auto') {
+                startAutoCycle();
+            }
+        }
+
+        function applyCycleState() {
+            // Update progress bar
+            elements.cycleProgress.style.width = cycleProgress + '%';
+            
+            // Calculate time (0-24 hours)
+            const hours = Math.floor(cycleProgress * 24 / 100);
+            const minutes = Math.floor((cycleProgress * 24 / 100 - hours) * 60);
+            elements.cycleTime.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+            
+            // Determine day/night
+            const isNight = cycleProgress < 25 || cycleProgress > 75;
+            const isSunset = cycleProgress >= 70 && cycleProgress <= 75;
+            const isSunrise = cycleProgress >= 25 && cycleProgress <= 30;
+            
+            // Update state
+            state.dayNight = isNight ? 'night' : 'day';
+            
+            // Update visuals
+            elements.sky.className = 'sky';
+            if (isSunset) elements.sky.classList.add('sunset');
+            else if (isSunrise) elements.sky.classList.add('sunrise');
+            else elements.sky.classList.add(isNight ? 'night' : 'day');
+            
+            elements.sun.classList.toggle('hidden', isNight);
+            elements.moon.classList.toggle('hidden', !isNight);
+            elements.starsContainer.style.opacity = isNight ? 1 : 0;
+            
+            elements.cycleProgress.classList.toggle('night', isNight);
+            elements.cycleIcon.textContent = isNight ? '🌙' : '☀️';
+            
+            updateAll();
+        }
+
+        // ===== CALCULATIONS =====
+        function calculatePhotosynthesis() {
+            const config = plantConfigs[plantType];
+            
+            // Calculate factors with plant-specific adjustments
+            let lightFactor = state.light / 100;
+            let waterFactor = state.water / 100;
+            let co2Factor = state.co2 / 100;
+
+            // Plant adaptations
+            if (plantType === 'cactus') {
+                // Cactus needs less water
+                if (state.water < 40) waterFactor = Math.max(waterFactor, 0.4);
+                if (state.water > 80) waterFactor *= 0.5; // Too much water hurts
+            } else if (plantType === 'waterlily') {
+                // Water lily needs more water
+                if (state.water < 70) waterFactor *= 0.6;
+            } else if (plantType === 'fern') {
+                // Fern tolerates low light
+                if (state.light < 50) lightFactor = Math.max(lightFactor * 1.5, 0.4);
+                if (state.light > 80) lightFactor *= 0.8; // Too much light hurts
+            }
+
+            // Temperature factor
+            const tempC = 5 + (state.temperature / 100) * 40;
+            const tempDiff = Math.abs(tempC - config.tempOptimal);
+            let tempFactor = tempDiff < 15 ? 1 - (tempDiff / 15) * 0.6 : Math.max(0, 0.4 - (tempDiff - 15) * 0.02);
+
+            // Find limiting factor
+            const factors = { 'Lys ☀️': lightFactor, 'Vand 💧': waterFactor, 'CO₂ 🌫️': co2Factor, 'Temperatur 🌡️': tempFactor };
+            let limitingFactorName = 'Lys ☀️';
+            let limitingFactorValue = lightFactor;
+
+            for (const [name, value] of Object.entries(factors)) {
+                if (value < limitingFactorValue) {
+                    limitingFactorName = name;
+                    limitingFactorValue = value;
+                }
+            }
+
+            // Night time
+            if (state.dayNight === 'night') {
+                lightFactor = 0;
+                limitingFactorName = 'Lys (nat) 🌙';
+                limitingFactorValue = 0;
+            }
+
+            // Disturbance multipliers
+            let disturbanceMultiplier = 1;
+            if (state.pollution) disturbanceMultiplier *= 0.6;
+            if (state.pests) disturbanceMultiplier *= 0.5;
+            if (state.acidRain) disturbanceMultiplier *= 0.4;
+            if (state.herbicides) disturbanceMultiplier *= 0.2;
+            if (state.poorSoil) disturbanceMultiplier *= 0.7;
+
+            // Calculate rate
+            const limitingFactor = Math.min(lightFactor, waterFactor, co2Factor, tempFactor);
+            let rate = limitingFactor * 100 * disturbanceMultiplier;
+            
+            // Respiration at night (plant "breathes" O2 and releases CO2)
+            let respirationRate = 0;
+            if (state.dayNight === 'night') {
+                respirationRate = 20 - rate; // Plants always respire
+            }
+
+            const glucose = rate * 0.8;
+            const oxygen = state.dayNight === 'night' ? respirationRate : rate * 0.9;
+            const healthBase = (lightFactor * 0.2 + waterFactor * 0.3 + co2Factor * 0.2 + tempFactor * 0.3);
+            const plantHealth = Math.max(0, Math.min(100, healthBase * 100 * disturbanceMultiplier));
+
+            let status;
+            if (state.dayNight === 'night') {
+                status = 'respiring';
+            } else if (rate < 5) status = 'stopped';
+            else if (rate < 30) status = 'critical';
+            else if (rate < 60) status = 'reduced';
+            else status = 'optimal';
+
+            return { rate, glucose, oxygen, plantHealth, status, tempC, limitingFactorName, limitingFactorValue, respirationRate };
+        }
+
+        // ===== UPDATE ALL =====
+        function updateAll() {
+            const result = calculatePhotosynthesis();
+
+            // Update limiting factor display
+            elements.limitingFactorText.innerHTML = `Begrænsende faktor: <em>${result.limitingFactorName}</em> (${Math.round(result.limitingFactorValue * 100)}%)`;
+
+            // Show/hide respiration info
+            elements.respirationInfo.classList.toggle('active', state.dayNight === 'night');
+
+            // Update meters
+            updateMeter('rate', result.rate, result.status);
+            updateMeter('glucose', result.glucose, result.status);
+            updateMeter('oxygen', Math.abs(result.oxygen), result.status);
+            updateMeter('health', result.plantHealth, result.status);
+
+            // Update status badge
+            const statusTexts = {
+                optimal: '🌟 Optimal Fotosyntese!',
+                reduced: '⚠️ Nedsat Fotosyntese',
+                critical: '🚨 Kritisk Tilstand!',
+                stopped: '⏹️ Fotosyntese Stoppet',
+                respiring: '🌙 Respiration (Celleånding)'
+            };
+            elements.statusBadge.textContent = statusTexts[result.status];
+            elements.statusBadge.className = 'status-badge ' + result.status;
+
+            updatePlantAppearance(result);
+            checkBadges(result);
+
+            if (currentChallenge) {
+                updateChallengeProgress(result);
+            }
+
+            return result;
+        }
+
+        function updateMeter(name, value, status) {
+            document.getElementById(name + 'Value').textContent = Math.round(value) + '%';
+            const bar = document.getElementById(name + 'Bar');
+            bar.style.width = value + '%';
+            bar.className = 'meter-fill';
+            if (status === 'optimal') bar.classList.add('green');
+            else if (status === 'reduced' || status === 'respiring') bar.classList.add('purple');
+            else if (status === 'critical') bar.classList.add('yellow');
+            else bar.classList.add('red');
+        }
+
+        function updatePlantAppearance(result) {
+            if (plantType !== 'normal') return;
+            
+            elements.stem.className = 'stem-3d';
+            if (result.plantHealth < 30) elements.stem.classList.add('dead');
+            else if (result.plantHealth < 50) elements.stem.classList.add('critical');
+            else if (result.plantHealth < 70) elements.stem.classList.add('unhealthy');
+
+            elements.leaves.forEach(leaf => {
+                leaf.className = 'leaf-3d';
+                if (result.plantHealth < 30) leaf.classList.add('dead');
+                else if (result.plantHealth < 50) leaf.classList.add('critical');
+                else if (result.plantHealth < 70) leaf.classList.add('unhealthy');
+                else leaf.classList.add('healthy');
+            });
+
+            elements.flower.classList.toggle('hidden', result.plantHealth < 70);
+
+            elements.ground.className = 'ground';
+            if (state.water < 25) elements.ground.classList.add('dry');
+            else if (state.water > 80) elements.ground.classList.add('flooded');
+            else elements.ground.classList.add('normal');
+
+            elements.heatWaves.classList.toggle('active', result.tempC > 35);
+            elements.frostOverlay.classList.toggle('active', result.tempC < 10);
+            elements.droughtOverlay.classList.toggle('active', state.water < 25);
+
+            elements.waterTransport.style.opacity = state.water > 20 ? 1 : 0.3;
+        }
+
+        // ===== CONTROLS =====
+        function updateLight(value) {
+            state.light = parseInt(value);
+            document.getElementById('lightValue').textContent = value + '%';
+            updateAll();
+        }
+
+        function updateWater(value) {
+            state.water = parseInt(value);
+            document.getElementById('waterValue').textContent = value + '%';
+            updateAll();
+        }
+
+        function setWater(value) {
+            state.water = value;
+            document.getElementById('waterSlider').value = value;
+            document.getElementById('waterValue').textContent = value + '%';
+            updateAll();
+        }
+
+        function updateCO2(value) {
+            state.co2 = parseInt(value);
+            document.getElementById('co2Value').textContent = value + '%';
+            updateAll();
+        }
+
+        function updateTemp(value) {
+            state.temperature = parseInt(value);
+            const tempC = Math.round(5 + (value / 100) * 40);
+            document.getElementById('tempValue').textContent = tempC + '°C';
+            updateAll();
+        }
+
+        function setTemp(value) {
+            state.temperature = value;
+            document.getElementById('tempSlider').value = value;
+            const tempC = Math.round(5 + (value / 100) * 40);
+            document.getElementById('tempValue').textContent = tempC + '°C';
+            updateAll();
+        }
+
+        function updateDisturbance(type, value) {
+            state[type] = value;
+            switch(type) {
+                case 'pollution':
+                    elements.pollutionFactory.classList.toggle('active', value);
+                    elements.toxicOverlay.classList.toggle('active', value);
+                    break;
+                case 'pests': updatePests(value); break;
+                case 'acidRain': updateRain(value); break;
+                case 'herbicides': elements.herbicideEffect.classList.toggle('active', value); break;
+            }
+            updateAll();
+        }
+
+        function updatePests(active) {
+            elements.pestsContainer.innerHTML = '';
+            if (active) {
+                const pests = ['🐛', '🦗', '🪲', '🐌', '🕷️'];
+                const positions = [{x: '35%', y: '40%'}, {x: '55%', y: '45%'}, {x: '45%', y: '50%'}, {x: '60%', y: '35%'}, {x: '40%', y: '55%'}];
+                positions.forEach((pos, i) => {
+                    const pest = document.createElement('div');
+                    pest.className = 'pest';
+                    pest.textContent = pests[i];
+                    pest.style.left = pos.x;
+                    pest.style.top = pos.y;
+                    elements.pestsContainer.appendChild(pest);
+                });
+            }
+        }
+
+        function updateRain(active) {
+            elements.rainContainer.innerHTML = '';
+            elements.rainContainer.classList.toggle('active', active);
+            elements.acidSplatter.classList.toggle('active', active);
+            if (active) {
+                for (let i = 0; i < 30; i++) {
+                    const drop = document.createElement('div');
+                    drop.className = 'acid-raindrop';
+                    drop.style.left = `${Math.random() * 100}%`;
+                    drop.style.animationDelay = `${Math.random() * 0.6}s`;
+                    elements.rainContainer.appendChild(drop);
+                }
+            }
+        }
+
+        function triggerCatastrophe() {
+            ['pollution', 'pests', 'acidRain', 'herbicides', 'poorSoil'].forEach(d => {
+                state[d] = true;
+                document.getElementById(d + 'Toggle').checked = true;
+            });
+            elements.pollutionFactory.classList.add('active');
+            elements.toxicOverlay.classList.add('active');
+            elements.herbicideEffect.classList.add('active');
+            updatePests(true);
+            updateRain(true);
+            updateAll();
+        }
+
+        // ===== RESET FUNCTIONS =====
+        function softReset() {
+            // Reset controls only
+            state = {
+                light: 70,
+                water: 60,
+                co2: 50,
+                temperature: 50,
+                dayNight: 'day',
+                pollution: false,
+                pests: false,
+                acidRain: false,
+                herbicides: false,
+                poorSoil: false
+            };
+            
+            document.getElementById('lightSlider').value = 70;
+            document.getElementById('waterSlider').value = 60;
+            document.getElementById('co2Slider').value = 50;
+            document.getElementById('tempSlider').value = 50;
+            document.getElementById('lightValue').textContent = '70%';
+            document.getElementById('waterValue').textContent = '60%';
+            document.getElementById('co2Value').textContent = '50%';
+            document.getElementById('tempValue').textContent = '25°C';
+            
+            ['pollution', 'pests', 'acidRain', 'herbicides', 'poorSoil'].forEach(d => {
+                document.getElementById(d + 'Toggle').checked = false;
+            });
+            
+            setCycleMode('day');
+            elements.pollutionFactory.classList.remove('active');
+            elements.toxicOverlay.classList.remove('active');
+            elements.herbicideEffect.classList.remove('active');
+            elements.heatWaves.classList.remove('active');
+            elements.frostOverlay.classList.remove('active');
+            elements.droughtOverlay.classList.remove('active');
+            updatePests(false);
+            updateRain(false);
+            
+            updateAll();
+        }
+
+        function fullReset() {
+            // Reset everything
+            softReset();
+            
+            // Reset plant type
+            selectPlantType('normal');
+            
+            // Reset challenges
+            currentChallenge = null;
+            document.querySelectorAll('.challenge-card').forEach(c => {
+                c.classList.remove('active', 'completed');
+            });
+            document.querySelectorAll('.challenge-status').forEach(s => {
+                s.textContent = '⭕';
+            });
+            document.querySelectorAll('.challenge-progress-fill').forEach(p => {
+                p.style.width = '0%';
+            });
+            
+            // Reset completed challenges
+            completedChallenges.clear();
+            
+            // Reset badges
+            unlockedBadges.clear();
+            document.querySelectorAll('.badge-item').forEach(b => {
+                b.classList.remove('unlocked');
+            });
+            
+            // Update progress
+            updateProgressBar();
+            document.getElementById('badgeCount').textContent = '0';
+            
+            // Reset hints
+            elements.hintText.innerHTML = 'Vælg en udfordring for at se hints...';
+            
+            updateAll();
+        }
+
+        // ===== TABS =====
+        function showTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tabName + 'Tab').classList.add('active');
+        }
+
+        // ===== CHALLENGES =====
+        function selectChallenge(num) {
+            document.querySelectorAll('.challenge-card').forEach(c => c.classList.remove('active'));
+            const card = document.getElementById('challenge' + num);
+            if (!card.classList.contains('completed')) {
+                card.classList.add('active');
+                currentChallenge = num;
+                elements.hintText.innerHTML = hints[num];
+            }
+        }
+
+        function updateChallengeProgress(result) {
+            const progress = document.getElementById('progress' + currentChallenge);
+            let targetMet = false;
+            let progressPercent = 0;
+            const tempC = result.tempC;
+            const activeDisturbances = [state.pollution, state.pests, state.acidRain, state.herbicides, state.poorSoil].filter(Boolean).length;
+
+            switch(currentChallenge) {
+                case 1: progressPercent = Math.min(100, result.rate / 50 * 100); targetMet = result.rate > 50; break;
+                case 2: progressPercent = Math.min(100, result.rate / 80 * 100); targetMet = result.rate > 80; break;
+                case 3: progressPercent = Math.min(100, result.rate / 80 * 100); targetMet = result.rate > 80 && tempC >= 20 && tempC <= 30; break;
+                case 4: progressPercent = state.water <= 25 ? Math.min(100, result.rate / 20 * 100) : 0; targetMet = result.rate >= 20 && state.water <= 25; break;
+                case 5: progressPercent = activeDisturbances >= 2 ? Math.min(100, result.rate / 25 * 100) : 0; targetMet = result.rate >= 25 && activeDisturbances >= 2; break;
+                case 6: targetMet = state.dayNight === 'night' && result.rate === 0; progressPercent = targetMet ? 100 : 0; break;
+                case 7: progressPercent = (plantType === 'cactus' && state.water <= 20) ? Math.min(100, result.rate / 30 * 100) : 0; targetMet = plantType === 'cactus' && state.water <= 20 && result.rate > 30; break;
+                case 8: progressPercent = (plantType === 'waterlily' && state.water > 80) ? Math.min(100, result.rate / 70 * 100) : 0; targetMet = plantType === 'waterlily' && state.water > 80 && result.rate > 70; break;
+                case 9: progressPercent = (plantType === 'fern' && state.light < 40) ? Math.min(100, result.rate / 50 * 100) : 0; targetMet = plantType === 'fern' && state.light < 40 && result.rate > 50; break;
+                case 10: 
+                    const minF = Math.min(state.light, state.water, state.co2);
+                    progressPercent = Math.min(100, result.rate / 60 * 100);
+                    targetMet = result.rate >= 60 && minF < 50;
+                    break;
+                case 11: progressPercent = Math.min(100, result.rate / 95 * 100); targetMet = result.rate > 95; break;
+            }
+
+            progress.style.width = progressPercent + '%';
+
+            if (targetMet && !completedChallenges.has(currentChallenge)) {
+                completedChallenges.add(currentChallenge);
+                document.getElementById('status' + currentChallenge).textContent = '✅';
+                document.getElementById('challenge' + currentChallenge).classList.add('completed');
+                updateProgressBar();
+                showCelebration(currentChallenge);
+                if (soundEnabled) playSound('success');
+            }
+        }
+
+        function updateProgressBar() {
+            const container = document.getElementById('progressBarContainer');
+            container.innerHTML = '';
+            for (let i = 1; i <= 11; i++) {
+                const segment = document.createElement('div');
+                segment.className = 'progress-segment';
+                if (completedChallenges.has(i)) {
+                    segment.classList.add('completed');
+                    if (i <= 3) segment.classList.add('bronze');
+                    else if (i <= 6) segment.classList.add('silver');
+                    else segment.classList.add('gold');
+                }
+                container.appendChild(segment);
+            }
+            document.getElementById('completedCount').textContent = completedChallenges.size;
+        }
+
+        // ===== BADGES =====
+        function checkBadges(result) {
+            if (result.rate > 50 && !unlockedBadges.has('first')) unlockBadge('first');
+            if (completedChallenges.size >= 5 && !unlockedBadges.has('scientist')) unlockBadge('scientist');
+            if (completedChallenges.size >= 11 && !unlockedBadges.has('expert')) unlockBadge('expert');
+            if ([state.pollution, state.pests, state.acidRain, state.herbicides, state.poorSoil].every(v => v) && result.rate > 5 && !unlockedBadges.has('survivor')) unlockBadge('survivor');
+        }
+
+        function unlockBadge(badgeId) {
+            unlockedBadges.add(badgeId);
+            document.getElementById('badge-' + badgeId).classList.add('unlocked');
+            document.getElementById('badgeCount').textContent = unlockedBadges.size;
+        }
+
+        // ===== CELEBRATION =====
+        function showCelebration(num) {
+            const titles = {
+                1: 'Første Skridt!', 2: 'Optimal Fotosyntese!', 3: 'Temperatur-ekspert!',
+                4: 'Tørke-mester!', 5: 'Forsvarer!', 6: 'Nat-forsker!',
+                7: 'Ørken-overlever!', 8: 'Vand-plante ekspert!', 9: 'Skygge-ekspert!',
+                10: 'Liebig-mester!', 11: 'Perfektionist!'
+            };
+            document.getElementById('trophyTitle').textContent = titles[num] || 'Udfordring fuldført!';
+            document.getElementById('trophyText').textContent = 'Du har løst udfordringen!';
+            document.getElementById('trophyCelebration').classList.add('show');
+
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + 'vw';
+                    confetti.style.background = ['#FFD700', '#FF6B6B', '#4CAF50', '#2196F3', '#FF9800'][Math.floor(Math.random() * 5)];
+                    document.body.appendChild(confetti);
+                    setTimeout(() => confetti.remove(), 3000);
+                }, i * 50);
+            }
+        }
+
+        function closeCelebration() {
+            document.getElementById('trophyCelebration').classList.remove('show');
+        }
+
+        // ===== ANIMATIONS =====
+        function startAnimations() {
+            createO2Bubbles();
+            createGlucoseParticles();
+            createCO2Molecules();
+            createRespirationEffects();
+        }
+
+        function createO2Bubbles() {
+            const result = calculatePhotosynthesis();
+            
+            if (result.rate > 10 && state.dayNight === 'day') {
+                const count = result.rate > 70 ? 4 : result.rate > 40 ? 3 : 2;
+                const positions = [{x: 30, y: 45}, {x: 40, y: 42}, {x: 50, y: 48}, {x: 60, y: 45}, {x: 55, y: 50}];
+                
+                for (let i = 0; i < count; i++) {
+                    setTimeout(() => {
+                        const pos = positions[Math.floor(Math.random() * positions.length)];
+                        const bubble = document.createElement('div');
+                        bubble.className = 'o2-bubble';
+                        const size = 45 + Math.random() * 20;
+                        const duration = result.rate > 60 ? 3 : 4;
+                        bubble.style.left = (pos.x + (Math.random() - 0.5) * 15) + '%';
+                        bubble.style.top = pos.y + '%';
+                        bubble.style.setProperty('--size', size + 'px');
+                        bubble.style.setProperty('--duration', duration + 's');
+                        bubble.innerHTML = '<div class="o2-bubble-outer"></div><div class="o2-text">O₂</div>';
+                        elements.o2Container.appendChild(bubble);
+                        if (soundEnabled) playSound('bubble');
+                        setTimeout(() => bubble.remove(), duration * 1000);
+                    }, i * 150);
+                }
+            }
+            setTimeout(createO2Bubbles, result.rate > 60 ? 400 : 800);
+        }
+
+        function createRespirationEffects() {
+            if (state.dayNight === 'night') {
+                // CO2 output at night
+                const co2 = document.createElement('div');
+                co2.className = 'co2-bubble';
+                co2.innerHTML = '<div class="co2-bubble-outer"></div><div class="co2-bubble-text">CO₂</div>';
+                co2.style.left = (35 + Math.random() * 30) + '%';
+                co2.style.top = '45%';
+                co2.style.setProperty('--size', '40px');
+                co2.style.setProperty('--duration', '5s');
+                elements.co2Container.appendChild(co2);
+                setTimeout(() => co2.remove(), 5000);
+                
+                // O2 intake at night
+                const o2 = document.createElement('div');
+                o2.className = 'o2-intake';
+                o2.textContent = 'O₂';
+                o2.style.left = (40 + Math.random() * 20) + '%';
+                o2.style.top = '30%';
+                elements.o2Container.appendChild(o2);
+                setTimeout(() => o2.remove(), 4000);
+            }
+            setTimeout(createRespirationEffects, 2000);
+        }
+
+        function createGlucoseParticles() {
+            const result = calculatePhotosynthesis();
+            if (result.glucose > 30 && state.dayNight === 'day') {
+                const particle = document.createElement('div');
+                particle.className = 'glucose-particle';
+                particle.textContent = '🍬';
+                particle.style.left = (40 + Math.random() * 20) + '%';
+                particle.style.top = '50%';
+                elements.glucoseContainer.appendChild(particle);
+                setTimeout(() => particle.remove(), 5000);
+            }
+            setTimeout(createGlucoseParticles, result.glucose > 60 ? 1500 : 3000);
+        }
+
+        function createCO2Molecules() {
+            const result = calculatePhotosynthesis();
+            if (result.rate > 20 && state.dayNight === 'day') {
+                const co2 = document.createElement('div');
+                co2.className = 'co2-molecule';
+                co2.innerHTML = '<span class="o">O</span><span class="c">C</span><span class="o">O</span>';
+                const startX = Math.random() > 0.5 ? 95 : 5;
+                co2.style.left = startX + '%';
+                co2.style.top = (25 + Math.random() * 30) + '%';
+                co2.style.setProperty('--start-x', '0');
+                co2.style.setProperty('--start-y', '0');
+                co2.style.setProperty('--end-x', (50 - startX * 0.5) + '%');
+                co2.style.setProperty('--end-y', '70px');
+                co2.style.setProperty('--duration', '3.5s');
+                elements.co2Container.appendChild(co2);
+                setTimeout(() => co2.remove(), 3500);
+            }
+            setTimeout(createCO2Molecules, 1500);
+        }
+
+        // Initialize
+        init();
+    </script>
+</body>
+</html>

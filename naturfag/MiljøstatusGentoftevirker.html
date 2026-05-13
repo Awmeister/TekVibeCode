@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Miljø-Status: Gentofte Kommune</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        /* --- GLOBALE VARIABLER --- */
+        :root {
+            --primary: #2563eb; --primary-hover: #1d4ed8;
+            --bg-color: #f8fafc; --sidebar-bg: #ffffff;
+            --text-main: #0f172a; --text-muted: #64748b;
+            --border-color: #e2e8f0; --input-focus: rgba(37, 99, 235, 0.15);
+            --radius: 8px; --radius-lg: 12px;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        * { box-sizing: border-box; }
+        
+        body { font-family: 'Inter', sans-serif; margin: 0; display: flex; width: 100vw; height: 100vh; overflow: hidden; background-color: var(--bg-color); color: var(--text-main); }
+
+        /* --- FORSIDE LAYOUT (LANDING PAGE) --- */
+        #landingPage { width: 100%; height: 100vh; overflow-y: auto; background-color: #fff; padding: 60px; z-index: 5000; position: absolute; top: 0; left: 0; transition: opacity 0.5s ease; opacity: 1; visibility: visible; }
+        #landingPage.hidden { opacity: 0; visibility: hidden; }
+
+        .landing-header { text-align: center; margin-bottom: 60px; }
+        .landing-header h1 { font-size: 3rem; font-weight: 800; color: var(--text-main); margin: 0 0 12px 0; }
+        .landing-header p { font-size: 1.2rem; color: var(--text-muted); margin: 0 auto 30px auto; max-width: 700px; }
+        .landing-header .start-btn { display: inline-flex; font-size: 1.1rem; padding: 14px 28px; width: auto; margin: 0; }
+
+        /* Teori Grid */
+        .landing-section { margin-bottom: 60px; }
+        .landing-section h2 { font-size: 1.8rem; font-weight: 700; color: var(--text-main); margin: 0 0 24px 0; border-bottom: 3px solid #bfdbfe; padding-bottom: 10px; display: inline-block; }
+        .theory-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+        
+        .theory-card { background: #f8fafc; border: 1px solid var(--border-color); padding: 20px; border-radius: var(--radius-lg); transition: all 0.2s ease; display: flex; flex-direction: column; gap: 12px; position: relative; }
+        .theory-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: #bfdbfe; background: #eff6ff; }
+        .theory-card h3 { font-size: 1.1rem; font-weight: 600; color: #1e3a8a; margin: 0; display: flex; align-items: center; gap: 8px; }
+        .theory-card p { font-size: 0.85rem; color: #475569; margin: 0; line-height: 1.5; }
+        .theory-icon-img { max-height: 60px; width: auto; border-radius: 4px; margin-top: auto; }
+
+        /* Workflow steps */
+        .step-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 30px; }
+        .step-card { text-align: center; background: #fff; border: 1px solid var(--border-color); padding: 24px; border-radius: var(--radius-lg); position: relative; }
+        .step-card span { display: block; font-size: 3rem; margin-bottom: 12px; }
+        .step-card h4 { font-size: 1rem; font-weight: 600; color: var(--text-main); margin: 0 0 4px 0; }
+        .step-card p { font-size: 0.8rem; color: var(--text-muted); margin: 0; }
+
+        .landing-footer { text-align: center; padding-top: 30px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+        
+        /* --- APP LAYOUT (INTERAKTIVT KORT) --- */
+        #appContainer { display: flex; width: 100vw; height: 100vh; visibility: hidden; opacity: 0; transition: opacity 0.5s ease; z-index: 100; }
+        #appContainer.show { visibility: visible; opacity: 1; }
+
+        #sidebar { flex-shrink: 0; width: 420px; height: 100vh; background: var(--sidebar-bg); box-shadow: 4px 0 20px rgba(0,0,0,0.06); overflow-y: auto; z-index: 1000; display: flex; flex-direction: column; padding: 24px; }
+        
+        #map { flex-grow: 1; width: calc(100vw - 420px); height: 100vh; z-index: 1; position: relative; }
+
+        .header { margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color); }
+        h2 { font-size: 1.25rem; font-weight: 700; margin: 0 0 4px 0; display: flex; align-items: center; gap: 8px; }
+        .subtitle { font-size: 0.85rem; color: var(--text-muted); margin: 0; }
+
+        /* --- FORMULARELEMENTER --- */
+        .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+        label { font-weight: 600; font-size: 0.85rem; color: #475569; }
+        input, select { padding: 10px 12px; border: 1px solid var(--border-color); border-radius: var(--radius); font-family: 'Inter', sans-serif; font-size: 0.95rem; background-color: #f8fafc; transition: all 0.2s; }
+        input:focus, select:focus { outline: none; border-color: var(--primary); background-color: #fff; box-shadow: 0 0 0 3px var(--input-focus); }
+        input[readonly] { background-color: #f1f5f9; color: var(--text-muted); cursor: not-allowed; }
+
+        /* --- KNAPPER --- */
+        button { background-color: var(--primary); color: white; border: none; padding: 12px 16px; cursor: pointer; border-radius: var(--radius); font-size: 0.95rem; font-weight: 600; transition: all 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; width: 100%; margin-top: 10px; }
+        button:hover { background-color: var(--primary-hover); transform: translateY(-1px); }
+        .btn-secondary { background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; margin-top: 12px; }
+        .btn-secondary:hover { background-color: #e2e8f0; }
+        .btn-dark { background-color: #1e293b; color: white; margin-top: 20px; }
+        .btn-dark:hover { background-color: #0f172a; }
+
+        /* --- FELTGUIDE KORT --- */
+        #fieldGuideContainer { background: #eff6ff; border: 1px solid #bfdbfe; padding: 16px; border-radius: var(--radius); margin-bottom: 20px; }
+        #fieldGuide h4 { margin: 0 0 8px 0; color: #1e3a8a; font-size: 0.95rem; }
+        #fieldGuide p { margin: 0; font-size: 0.85rem; color: #3b82f6; line-height: 1.5; }
+        .guide-image { width: 100%; height: auto; border-radius: 6px; margin-top: 12px; box-shadow: var(--shadow-sm); }
+
+        /* --- MODAL (FROSTED GLASS) --- */
+        #guideModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(5px); z-index: 2000; display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: all 0.3s ease; }
+        #guideModal.show { opacity: 1; visibility: visible; }
+        .modal-content { background: white; padding: 32px; border-radius: 12px; width: 90%; max-width: 700px; max-height: 90vh; overflow-y: auto; position: relative; box-shadow: var(--shadow-lg); transform: translateY(20px); transition: transform 0.3s ease; }
+        #guideModal.show .modal-content { transform: translateY(0); }
+        .close-btn { position: absolute; top: 16px; right: 24px; font-size: 28px; color: #94a3b8; cursor: pointer; line-height: 1; }
+        .close-btn:hover { color: #0f172a; }
+
+        /* --- LEAFLET KORT & CUSTOM POPUPS --- */
+        .leaflet-popup-content-wrapper { border-radius: 12px; padding: 0; overflow: hidden; }
+        .leaflet-popup-content { margin: 0; font-family: 'Inter', sans-serif; width: 280px !important; }
+        .popup-header { padding: 12px 16px; color: white; font-weight: 600; font-size: 0.95rem; display: flex; justify-content: space-between; align-items: center; }
+        .popup-body { padding: 16px; background: white; }
+        .popup-section { margin-bottom: 12px; font-size: 0.9rem; }
+        .popup-section b { color: #334155; font-size: 0.85rem; text-transform: uppercase; display: block; margin-bottom: 4px; }
+        .popup-basis { background: #f8fafc; padding: 12px; border-radius: 6px; font-size: 0.8rem; color: #64748b; margin-top: 12px; border: 1px solid var(--border-color); }
+        
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div id="landingPage">
+        <div class="landing-header">
+            <h1>🌍 Digitalt Miljø-Laboratorium</h1>
+            <p>I samarbejde med Gentofte Kommune undersøger vi den lokale natur. Dette interaktive værktøj lader dig analysere dine feltspecifikke målinger af miljøkemi, økologi og klimatilpasning.</p>
+            <button class="start-btn" onclick="startApp()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                🚀 START DIT FELTARBEJDE
+            </button>
+        </div>
+
+        <div class="landing-section">
+            <h2>Kort & Præcist: Hvordan virker det?</h2>
+            <div class="step-grid">
+                <div class="step-card">
+                    <span>🗺️</span>
+                    <h4>1. Vælg Lokation</h4>
+                    <p>Klik et sted på kortet inde i Gentofte.</p>
+                </div>
+                <div class="step-card">
+                    <span>🔍</span>
+                    <h4>2. Udfør Undersøgelse</h4>
+                    <p>Følg feltguiden for den valgte måling.</p>
+                </div>
+                <div class="step-card">
+                    <span>📊</span>
+                    <h4>3. Indtast Data</h4>
+                    <p>Tast dine rå-værdier ind i formularen.</p>
+                </div>
+                <div class="step-card">
+                    <span>💡</span>
+                    <h4>4. Se Analysen</h4>
+                    <p>Gem målingen for at se vurderingen på kortet.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="landing-section">
+            <h2>Undersøgelsestyper & Biologisk Teori</h2>
+            <div class="theory-grid">
+                <div class="theory-card">
+                    <h3><span>🧪</span> Vandkemi: Nitrat & Fosfat</h3>
+                    <p><b>Hvorfor måler vi det?</b> Overskud af næringsstoffer fører til <b>eutrofiering</b> (algeopblomstring). Når algerne dør, skaber det iltsvind, som kvæler dyrelivet.</p>
+                    <p><b>Feltmetode:</b> Reagensglas med test-piller. Vent 5 min. og aflæs farveskala.</p>
+                    <img src="https://www.scandidact.dk/media/iopt/catalog/product/cache/75ad54db03df81ce7d45792997338350/image/20383de78/nitrat-og-nitrit.webp" class="theory-icon-img">
+                </div>
+
+                <div class="theory-card">
+                    <h3><span>🐛</span> Vandløbsfauna (Bioindikator)</h3>
+                    <p><b>Hvorfor måler vi det?</b> Forskellige smådyr har forskellig tolerance for iltsvind. Fundet af rottehaler indikerer meget lavt ilt (rød), mens døgnfluer indikerer rent og iltrigt vand (grøn).</p>
+                    <p><b>Feltmetode:</b> Kør fiskenettet gennem planterne i vandkanten. Hæld i hvid bakke.</p>
+                    <img src="https://media.frederiksen-scientific.com/image-cache/781028.png" class="theory-icon-img">
+                </div>
+
+                <div class="theory-card">
+                    <h3><span>⚪</span> Søens tilstand: Sigtdybde</h3>
+                    <p><b>Hvorfor måler vi det?</b> Viser, hvor klart vandet er. Lav sigtdybde (rød) skyldes ofte mange svævealger, som blokerer sollyset for bundplanterne.</p>
+                    <p><b>Feltmetode:</b> Sænk Secchi-skiven ned. Lige præcis når du ikke kan se den mere, aflæser du dybden.</p>
+                    <img src="https://limnoloan.org/wp-content/uploads/2023/06/Secchi_Disk_JoelDavenport.jpg" class="theory-icon-img">
+                </div>
+
+                <div class="theory-card">
+                    <h3><span>🌱</span> Jordprøve: Nitrat & Fosfat</h3>
+                    <p><b>Hvorfor måler vi det?</b> Vurdering af, om jorden er overgødsket. Forhøjede værdier kan påvirke biodiversiteten på land og udvaskes til vandløb.</p>
+                    <p><b>Feltmetode:</b> Grav 10 cm ned. Bland jord og demineraliseret vand. Ryst og filtrer.</p>
+                    <img src="https://via.placeholder.com/600x300?text=Illustration+af+filtrering" class="theory-icon-img">
+                </div>
+
+                <div class="theory-card">
+                    <h3><span>🌧️</span> Skybrud: Nedsivning</h3>
+                    <p><b>Hvorfor måler vi det?</b> Kapaciteten af jordens matrix til at absorbere ekstreme regnmængder. Kombineres med topografi (lav højde) for at vurdere oversvømmelsesrisiko.</p>
+                    <p><b>Feltmetode:</b> Bank rør i jorden. Hæld 10 cm vand i. Mål mm fald.</p>
+                    <img src="https://skoven-i-skolen.dk/sites/skoven-i-skolen.dk/files/filer/Projekter/klimatilpasningsanlaeg/Nedsivning_af_regnvand_partikelstorrelse/forside_nedsivnings_test_pu_jord_0.webp" class="theory-icon-img">
+                </div>
+
+                <div class="theory-card">
+                    <h3><span>🌿</span> Biodiversitet på land (Planter)</h3>
+                    <p><b>Hvorfor måler vi det?</b> Registrering af artsrigdom. Kvælstofelskende planter som brændenælder udkonkurrerer andre arter og indikerer forurening.</p>
+                    <p><b>Feltmetode:</b> Kast hulahopringen. Tæl hvor mange forskellige plantearter der er indeni cirklen.</p>
+                    <img src="https://testoteket.dk/wp-content/uploads/2022/12/Raunkiaerscirkel.jpg" class="theory-icon-img">
+                </div>
+            </div>
+        </div>
+
+        <div class="landing-footer">
+            <div style="color: var(--text-muted); font-size: 0.8rem; border: 1px dashed #ccc; padding: 10px; border-radius: 4px;">[Skolens Logo Pladsholder]</div>
+            <div style="text-align: right; color: var(--text-muted); font-size: 0.85rem;">Et projekt af [Skolens Navn]<br>I samarbejde med Gentofte Kommune</div>
+        </div>
+    </div>
+
+    <div id="appContainer">
+        <div id="guideModal" class="guide-modal">
+            <div class="guide-modal-content">
+                <span class="close-btn" onclick="closeGuideModal()">×</span>
+                <div id="modalGuideContent"></div>
+            </div>
+        </div>
+
+        <div id="sidebar">
+            <div class="header">
+                <h2>🌍 Digitalt Miljø-Laboratorium</h2>
+                <p class="subtitle">Dataindsamling for Gentofte Kommune</p>
+            </div>
+            
+            <div class="form-group">
+                <label>1. Lokation (Klik på kortet)</label>
+                <input type="text" id="coords" placeholder="Venter på koordinater..." readonly>
+            </div>
+
+            <div class="form-group">
+                <label>2. Vælg undersøgelsestype</label>
+                <select id="measurementType" onchange="toggleFields()">
+                    <optgroup label="Kemi & Fysik">
+                        <option value="vand_kemi">Vandløb/Sø: Nitrat & Fosfat</option>
+                        <option value="jord_kemi">Jordprøve: Nitrat & Fosfat</option>
+                        <option value="nedsivning">Skybrud: Nedsivningshastighed</option>
+                    </optgroup>
+                    <optgroup label="Biologi (Bioindikatorer)">
+                        <option value="vand_fauna">Vandløbsfauna (Smådyr)</option>
+                        <option value="vand_sigtdybde">Søens tilstand: Sigtdybde</option>
+                        <option value="jord_planter">Biodiversitet på land (Planter)</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <div id="fieldGuideContainer">
+                <div id="fieldGuide"></div>
+                <button class="btn-secondary" onclick="openGuideModal()">🔍 Forstør vejledning</button>
+            </div>
+
+            <div id="fields_vand_kemi" class="input-section">
+                <div class="form-group"><label>Nitrat (mg/L):</label><input type="number" id="v_nitrate" step="0.1" placeholder="F.eks. 2.5"></div>
+                <div class="form-group"><label>Fosfat (mg/L):</label><input type="number" id="v_phosphate" step="0.01" placeholder="F.eks. 0.04"></div>
+            </div>
+
+            <div id="fields_jord_kemi" class="input-section hidden">
+                <div class="form-group"><label>Nitrat (mg/kg):</label><input type="number" id="j_nitrate" step="0.1" placeholder="F.eks. 15"></div>
+                <div class="form-group"><label>Fosfat (mg/kg):</label><input type="number" id="j_phosphate" step="0.01" placeholder="F.eks. 2.1"></div>
+            </div>
+
+            <div id="fields_nedsivning" class="input-section hidden">
+                <div class="form-group"><label>Nedsivningshastighed (mm/time):</label><input type="number" id="infiltration" step="1" placeholder="F.eks. 12"></div>
+            </div>
+
+            <div id="fields_vand_fauna" class="input-section hidden">
+                <div class="form-group">
+                    <label>Hvilken dyregruppe dominerede?</label>
+                    <select id="fauna_type">
+                        <option value="red">Rottehaler / Røde dansemyg</option>
+                        <option value="yellow">Vandbænkebidere / Tanglopper</option>
+                        <option value="green">Slørvingenymfer / Døgnfluer</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="fields_vand_sigtdybde" class="input-section hidden">
+                <div class="form-group"><label>Sigtdybde (cm):</label><input type="number" id="secchi" step="1" placeholder="F.eks. 80"></div>
+            </div>
+
+            <div id="fields_jord_planter" class="input-section hidden">
+                <div class="form-group"><label>Antal forskellige plantearter i cirklen:</label><input type="number" id="species" step="1" placeholder="F.eks. 12"></div>
+                <div class="form-group">
+                    <label>Er området domineret af nælde, skvalderkål eller brombær?</label>
+                    <select id="nettles">
+                        <option value="yes">Ja (Kvælstofelskende dominans)</option>
+                        <option value="no">Nej (Blandet vegetation)</option>
+                    </select>
+                </div>
+            </div>
+
+            <button onclick="saveMeasurement()">💾 Gem Måling på Kortet</button>
+        </div>
+
+        <div id="map"></div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script>
+        // === APP START LOGIK === //
+        function startApp() {
+            // Skjul forside
+            const landing = document.getElementById('landingPage');
+            landing.classList.add('hidden');
+            
+            // Tving browseren til at glemme forsidens plads, så z-index fungerer korrekt
+            setTimeout(() => { landing.style.display = 'none'; }, 500);
+
+            // Vis app
+            const app = document.getElementById('appContainer');
+            app.classList.add('show');
+            
+            // Tvinger kortet til at genberegne sin størrelse, når det vises
+            setTimeout(() => { map.invalidateSize(); }, 600);
+        }
+
+        // --- KORT OPSÆTNING --- //
+        const map = L.map('map', { zoomControl: false }).setView([55.749, 12.544], 13);
+        L.control.zoom({ position: 'topright' }).addTo(map);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
+
+        let selectedLat = null; let selectedLng = null; let mapMarker = null;
+
+        map.on('click', function(e) {
+            selectedLat = e.latlng.lat; selectedLng = e.latlng.lng;
+            document.getElementById('coords').value = `${selectedLat.toFixed(5)}, ${selectedLng.toFixed(5)}`;
+            if (mapMarker) map.removeLayer(mapMarker);
+            
+            const customIcon = L.divIcon({ className: 'custom-pin', html: `<div style="background-color: #2563eb; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"></div>`, iconSize: [16, 16], iconAnchor: [8, 8] });
+            mapMarker = L.marker([selectedLat, selectedLng], {icon: customIcon}).addTo(map);
+        });
+
+        // --- FELTGUIDE INDHOLD --- //
+        // (De samme guides som på forsiden, så der er konsistens)
+        const guides = {
+            'vand_kemi': `<h4>📖 Feltguide: Kemi i Vand</h4><p>Fyld reagensglasset. Tilsæt test-pillen. Vent 5 minutter og aflæs farven.</p><img src="https://www.scandidact.dk/media/iopt/catalog/product/cache/75ad54db03df81ce7d45792997338350/image/20383de78/nitrat-og-nitrit.webp" class="guide-image">`,
+            'jord_kemi': `<h4>📖 Feltguide: Jordprøve</h4><p>Grav 10 cm ned. Tag en prøve uden rødder. Bland 1 del jord med 5 dele demineraliseret vand. Ryst og filtrer.</p><img src="https://via.placeholder.com/600x300?text=Illustration+af+filtrering" class="guide-image">`,
+            'nedsivning': `<h4>📖 Feltguide: Nedsivning</h4><p>Bank et rør i jorden. Hæld 10 cm vand i. Mål hvor mange mm vandstanden falder på 10 minutter, og gang med 6 for at få mm/time.</p><img src="https://skoven-i-skolen.dk/sites/skoven-i-skolen.dk/files/filer/Projekter/klimatilpasningsanlaeg/Nedsivning_af_regnvand_partikelstorrelse/forside_nedsivnings_test_pu_jord_0.webp" class="guide-image">`,
+            'vand_fauna': `<h4>📖 Feltguide: Smådyr (DVFI)</h4><p>Kør fiskenettet gennem planterne i vandkanten. Hæld fangsten op i en hvid bakke. Brug bestemmelsesdugen til at finde de mest dominerende arter.</p><img src="https://media.frederiksen-scientific.com/image-cache/781028.png" class="guide-image">`,
+            'vand_sigtdybde': `<h4>📖 Feltguide: Sigtdybde</h4><p>Sænk Secchi-skiven ned i vandet på et sted uden for meget skygge. Lige præcis når du ikke kan se skiven mere, aflæser du dybden på snoren.</p><img src="https://limnoloan.org/wp-content/uploads/2023/06/Secchi_Disk_JoelDavenport.jpg" class="guide-image">`,
+            'jord_planter': `<h4>📖 Feltguide: Raunkiær-cirkel</h4><p>Kast hulahopringen tilfældigt over skulderen. Tæl hvor mange forskellige plantearter der er indeni cirklen.</p><img src="https://testoteket.dk/wp-content/uploads/2022/12/Raunkiaerscirkel.jpg" class="guide-image">`
+        };
+
+        function toggleFields() {
+            const type = document.getElementById('measurementType').value;
+            document.getElementById('fieldGuide').innerHTML = guides[type];
+            document.querySelectorAll('.input-section').forEach(el => el.classList.add('hidden'));
+            document.getElementById('fields_' + type).classList.remove('hidden');
+        }
+
+        function openGuideModal() {
+            const type = document.getElementById('measurementType').value;
+            // Gør teksten større i modalen og opdaterer indhold
+            let modalHtml = guides[type].replace('<h4>', '<h2 style="color:#0f172a; margin-top:0;">').replace('</h4>', '</h2>');
+            document.getElementById('modalGuideContent').innerHTML = modalHtml;
+            
+            // Leaflet standard CSS driller z-index, vi fjerner dens z-index midlertidigt
+            document.querySelector('.leaflet-zoom-animated').style.zIndex = -1000;
+            
+            document.getElementById('guideModal').classList.add('show');
+        }
+
+        function closeGuideModal() {
+            // Bring Leaflet z-index tilbage
+            document.querySelector('.leaflet-zoom-animated').style.zIndex = 1;
+            document.getElementById('guideModal').classList.remove('show');
+        }
+
+        // Kør toggleFields én gang ved start for at vise den rigtige guide i sidebar
+        toggleFields();
+
+        // --- GEM & ANALYSER MÅLING (Uændret logik) --- //
+        async function saveMeasurement() {
+            if (!selectedLat || !selectedLng) return alert("Husk at klikke på kortet!");
+            const btn = document.querySelector('button[onclick="saveMeasurement()"]');
+            const type = document.getElementById('measurementType').value;
+            let color = 'gray'; let explanation = ''; let basis = ''; let dataText = ''; let title = '';
+            let isFloodRisk = false; let floodRadius = 10;
+            const colors = { 'green': '#10b981', 'yellow': '#f59e0b', 'red': '#ef4444' };
+
+            if (type === 'vand_kemi') {
+                title = 'Vandkemi Analyse';
+                const n = parseFloat(document.getElementById('v_nitrate').value);
+                const p = parseFloat(document.getElementById('v_phosphate').value);
+                if(isNaN(n) || isNaN(p)) return alert("Indtast venligst tal.");
+                dataText = `Nitrat: ${n} mg/L<br>Fosfat: ${p} mg/L`;
+                if (n > 5 || p > 0.1) { color = 'red'; explanation = "Dårlig tilstand. Risiko for iltsvind."; }
+                else if (n > 2 || p > 0.05) { color = 'yellow'; explanation = "Moderat tilstand."; }
+                else { color = 'green'; explanation = "God tilstand."; }
+                basis = `Nitrat > 5 mg/L eller Fosfat > 0,1 mg/L udløser rød alarm. Under hhv. 2 og 0,05 betragtes som grønt.`;
+            } else if (type === 'vand_fauna') {
+                title = 'Bioindikator (Fauna)';
+                const fauna = document.getElementById('fauna_type').value;
+                if (fauna === 'red') { color = 'red'; explanation = "Vandet er forurenet og lider af kraftigt iltsvind."; }
+                else if (fauna === 'yellow') { color = 'yellow'; explanation = "Moderat iltsvind. Økosystemet er presset."; }
+                else { color = 'green'; explanation = "Rent og iltrigt vand."; }
+                basis = `Dyr fungerer som et levende termometer. Rottehaler overlever uden ilt (rød). Døgnfluer dør uden ilt (grøn).`;
+            } else if (type === 'vand_sigtdybde') {
+                title = 'Søens tilstand (Sigtdybde)';
+                const secchi = parseFloat(document.getElementById('secchi').value);
+                if(isNaN(secchi)) return alert("Indtast venligst tal.");
+                dataText = `Sigtdybde: ${secchi} cm`;
+                if (secchi < 50) { color = 'red'; explanation = "Meget grumset vand (sandsynligvis svævealger). Sollyset når ikke bunden."; }
+                else if (secchi < 100) { color = 'yellow'; explanation = "Moderat klarhed."; }
+                else { color = 'green'; explanation = "Klart vand."; }
+                basis = `Sigtdybde under 50 cm (rød) skyldes alger, som lever af fosfat/nitrat. Blokerer lyset for bundplanter.`;
+            } else if (type === 'nedsivning') {
+                title = 'Skybrudsrisiko'; isFloodRisk = true;
+                const inf = parseFloat(document.getElementById('infiltration').value);
+                if(isNaN(inf)) return alert("Indtast venligst tal.");
+                btn.innerHTML = '⏳ Beregner topografi...'; btn.disabled = true;
+                try {
+                    const response = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${selectedLat}&longitude=${selectedLng}`);
+                    const data = await response.json(); const elevation = data.elevation[0];
+                    dataText = `Nedsivning: ${inf} mm/t<br>Højde: ${elevation} moh.`;
+                    if (inf < 10 && elevation < 10) { color = 'red'; floodRadius = 250; }
+                    else if (inf < 20) { color = 'yellow'; floodRadius = 100; }
+                    else { color = 'green'; floodRadius = 40; }
+                    explanation = color === 'red' ? "Høj risiko." : "Sikkert.";
+                    basis = `Nedsivning < 10 og højde < 10 = Rød.st stor blå oversvømmelsescirkel.`;
+                } catch (e) { alert("API fejl."); } finally { btn.innerHTML = '💾 Gem Måling på Kortet'; btn.disabled = false; }
+            } else if (type === 'jord_kemi' || type === 'jord_planter') {
+                title = type === 'jord_kemi' ? 'Jordkemi Analyse' : 'Biodiversitet på land';
+                if (type === 'jord_kemi') {
+                    const n = parseFloat(document.getElementById('j_nitrate').value); const p = parseFloat(document.getElementById('j_phosphate').value);
+                    if(isNaN(n) || isNaN(p)) return alert("Indtast tal.");
+                    dataText = `Nitrat: ${n} mg/kg<br>Fosfat: ${p} mg/kg`;
+                    if (n > 25 || p > 4) color = 'red'; else if (n > 10 || p > 2) color = 'yellow'; else color = 'green';
+                    explanation = color === 'red' ? "Kraftig belastning." : "Naturligt niveau."; basis = `Nitrat > 25 mg/kg eller fosfat > 4 mg/kg farver målingen rød.`;
+                } else {
+                    const sp = parseFloat(document.getElementById('species').value); const nettles = document.getElementById('nettles').value;
+                    if(isNaN(sp)) return alert("Indtast tal.");
+                    dataText = `Arter: ${sp}<br>Nælde-dominans: ${nettles}`;
+                    if (nettles === 'yes') color = 'red'; else if (sp >= 10) color = 'green'; else color = 'yellow';
+                    explanation = color === 'red' ? "Ubalance. Nælde dominans." : "Høj biodiversitet."; basis = `Nælde dominans = rød. Ellers over 10 arter = grøn.`;
+                }
+            }
+
+            const customPopupText = `<div class="popup-header" style="background-color: ${colors[color]}"><span>${title}</span></div><div class="popup-body"><div class="popup-section"><b>Målinger</b><br>${dataText}</div><div class="popup-section"><b>Resultat</b><br>${explanation}</div><div class="popup-basis"><b>Algoritmen bag</b><br>${basis}</div></div>`;
+            
+            if (isFloodRisk) { L.circle([selectedLat, selectedLng], { radius: floodRadius, color: '#3b82f6', fillColor: colors[color], fillOpacity: 0.4, weight: 2 }).addTo(map).bindPopup(customPopupText).openPopup(); } 
+            else { L.circleMarker([selectedLat, selectedLng], { radius: 12, fillColor: colors[color], color: "#ffffff", weight: 3, opacity: 1, fillOpacity: 0.9 }).addTo(map).bindPopup(customPopupText).openPopup(); }
+            if (mapMarker) map.removeLayer(mapMarker); document.querySelectorAll('input[type="number"]').forEach(input => input.value = '');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<title>U‑238 → Pb‑206: Visuel multiple‑choice henfaldstur</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --bg:#0f1221; --panel:#171a2d; --border:#2b3055; --chip:#242a54;
+    --text:#e8edff; --muted:#99a2c2; --accent:#7cf5ff;
+    --alpha:#ff6b6b; --beta:#6bd36b; --gamma:#ffd166; --ok:#3ad29f; --err:#ef476f;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--text); font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;}
+  h1{ text-align:center; font-weight:800; margin:18px 12px 0 }
+
+  .layout{ display:grid; grid-template-columns:320px 1fr; gap:16px; padding:16px; align-items:start }
+  @media (max-width:980px){ .layout{ grid-template-columns:1fr } }
+
+  /* Sidepanel */
+  .side{ background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:12px; position:sticky; top:12px }
+  .side h2{margin:6px 0 6px; font-size:18px}
+  .sect{ border-top:1px solid var(--border); padding-top:10px; margin-top:10px}
+  .legend{ display:flex; flex-wrap:wrap; gap:8px }
+  .pill{ display:inline-flex; align-items:center; gap:8px; background:var(--chip); border:1px solid var(--border);
+         border-radius:999px; padding:6px 10px; color:var(--muted); font-size:13px }
+  .dot{ width:10px; height:10px; border-radius:50% }
+  .dot.alpha{ background:var(--alpha)} .dot.beta{ background:var(--beta)} .dot.gamma{ background:var(--gamma)}
+
+  #pathList{ list-style:none; margin:8px 0 0; padding:0; max-height:220px; overflow:auto }
+  #pathList li{ padding:6px 8px; border:1px solid var(--border); border-radius:8px; margin-bottom:6px; background:#1b2040; }
+  #pathList li a{ color:#a6d4ff; text-decoration:none }
+  #pathList li a:hover{ text-decoration:underline }
+  .stats{ display:flex; gap:10px; flex-wrap:wrap; margin-top:6px; color:var(--muted); font-size:14px }
+
+  #miniWrap{ background:#11162f; border:1px solid var(--border); border-radius:10px; padding:8px }
+  svg{ width:100%; height:auto; display:block }
+  .mini-node{ fill:#4e64d8; stroke:#d6dfff; stroke-width:0.6; cursor:pointer }
+  .mini-node.stable{ fill:#3a8a54; stroke:#bee5c6 }
+  .mini-node.current{ fill:#00d4ff; stroke:white; stroke-width:1.2 }
+  .mini-link{ stroke:#6670b9; stroke-width:1 }
+  .mini-label{ fill:#cfe2ff; font:10px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; user-select:none }
+
+  /* Hovedområde (quiz) */
+  .main{ background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:16px; min-height:360px }
+  .controls{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:8px }
+  .btn{ background:#2d3a68; border:1px solid #445; color:white; padding:8px 14px; border-radius:8px; cursor:pointer; font-weight:700 }
+  .btn:hover{ background:#394a85 }
+
+  .quizCard{ background:#20264b; border:1px solid var(--border); border-radius:12px; padding:16px; margin-top:6px }
+  .question{ font-weight:700; margin-bottom:10px }
+  .nuclide{ font: 600 22px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace }
+  .miniText{ color:var(--muted) }
+
+  .nuclear-eq{ display:flex; align-items:center; gap:10px; flex-wrap:wrap }
+  .arrow{ font-weight:800; padding:4px 10px; border-radius:999px; border:1px solid var(--border); background:#1a2046 }
+  .is-alpha{ color:var(--alpha); border-color:#8d3a3a; background:rgba(255,107,107,.12) }
+  .is-beta{  color:var(--beta);  border-color:#376b3a; background:rgba(107,211,107,.12) }
+  .is-gamma{ color:var(--gamma); border-color:#856a29; background:rgba(255,209,102,.12) }
+
+  .choices{ display:grid; grid-template-columns: repeat(2, minmax(160px, 1fr)); gap:10px; margin-top:12px }
+  .choices.three{ grid-template-columns:repeat(3, minmax(120px,1fr)) }
+  .choice{ background:#242a54; border:1px solid var(--border); border-radius:10px; padding:10px; cursor:pointer; text-align:center }
+  .choice:hover{ background:#2d3368 }
+
+  .feedback{ margin-top:12px; padding:10px; border-radius:10px; border:1px solid var(--border) }
+  .ok{ background:rgba(58,210,159,.12); border-color:#2d7e61 }
+  .err{ background:rgba(239,71,111,.12); border-color:#7f2c3d }
+
+  .arrow-anim{ margin:10px 0 10px 5px; font-size:20px; color:var(--accent); animation:fadeIn .4s ease }
+  @keyframes fadeIn{ from{opacity:0; transform:translateX(-8px)} to{opacity:1; transform:translateX(0)} }
+
+  .children{ margin-top:6px; border-left:2px solid #3c3f66; padding-left:14px }
+  .branch{ background:#242a54; border:1px solid var(--border); border-radius:8px; padding:10px; margin:6px 0; cursor:pointer }
+  .branch:hover{ background:#2d3368 }
+
+  .footer{ text-align:center; color:var(--muted); padding:8px 12px 20px }
+</style>
+</head>
+<body>
+
+<h1>U‑238 → Pb‑206: Multiple‑choice henfaldstur</h1>
+
+<div class="layout">
+  <!-- Sidepanel -->
+  <aside class="side">
+    <section>
+      <h2>Henfaldsrække (løbende)</h2>
+      <div class="miniText">Klik på et trin for at hoppe dertil.</div>
+      <ul id="pathList"></ul>
+      <div class="stats">
+        <div>Rigtigt på 1. forsøg: <strong id="scoreOK">0</strong></div>
+        <div>Forsøg i alt: <strong id="scoreAll">0</strong></div>
+      </div>
+      <div class="controls" style="margin-top:8px">
+        <button class="btn" id="btnBack">⬅️ Gå tilbage</button>
+        <button class="btn" id="btnClear">🗑️ Ryd sti</button>
+      </div>
+    </section>
+
+    <section class="sect">
+      <h2>Minikort</h2>
+      <div id="miniWrap"><svg id="mini" viewBox="0 0 320 360" aria-label="Minikort"></svg></div>
+      <div class="miniText" style="margin-top:6px">Klik på en node i minikortet for at starte dér (stien nulstilles).</div>
+    </section>
+
+    <section class="sect">
+      <h2>Strålingstyper</h2>
+      <div class="legend" style="margin-bottom:6px">
+        <span class="pill"><span class="dot alpha"></span> α: A→A−4, Z→Z−2</span>
+        <span class="pill"><span class="dot beta"></span> β⁻: Z→Z+1</span>
+        <span class="pill"><span class="dot gamma"></span> IT/γ: A, Z uændret</span>
+      </div>
+      <div class="miniText">
+        Reglerne afspejler standard kernebogføring ved radioaktivt henfald (alfa‑henfald, beta‑minus og isomerisk overgang/γ). [1](https://radioactivity.eu.com/articles/phenomenon/radioactive_series)[2](https://www.nrc.gov/docs/ML1122/ML11227A233.pdf)
+      </div>
+    </section>
+  </aside>
+
+  <!-- Hovedområde -->
+  <main class="main">
+    <div class="controls">
+      <button class="btn" id="btnHome">🏁 Til start</button>
+      <button class="btn" id="btnHint">💡 Hint</button>
+      <button class="btn" id="btnReveal">🔍 Vis mulige henfald</button>
+    </div>
+
+    <div id="quiz"></div>
+  </main>
+</div>
+
+<div class="footer">
+  <small>
+    Serie: U‑238 → … → Pb‑206 (stabil). Data følger standardoversigter for uran‑serien. [3](https://en.wikipedia.org/wiki/Uranium-238)[4](https://www-eng.lbl.gov/~shuman/NEXT/MATERIALS&COMPONENTS/Background_measurement/natural-decay-series.pdf)
+  </small>
+</div>
+
+<script>
+/* ===============================
+   DATA – U‑238 henfaldsserien
+   =============================== */
+const chain = {
+ "U-238": {A:238,Z:92,sym:"U",hl:"4.468e9 år", decays:[{to:"Th-234",type:"α"}]},
+ "Th-234":{A:234,Z:90,sym:"Th",hl:"24.10 d", decays:[{to:"Pa-234m",type:"β⁻"},{to:"Pa-234",type:"β⁻"}]},   // to β−-grene
+ "Pa-234m":{A:234,Z:91,sym:"Pa",hl:"1.17 min", decays:[{to:"U-234",type:"β⁻"},{to:"Pa-234",type:"IT"}]},
+ "Pa-234": {A:234,Z:91,sym:"Pa",hl:"6.70 h", decays:[{to:"U-234",type:"β⁻"}]},
+ "U-234":  {A:234,Z:92,sym:"U",hl:"245500 år", decays:[{to:"Th-230",type:"α"}]},
+ "Th-230": {A:230,Z:90,sym:"Th",hl:"75400 år", decays:[{to:"Ra-226",type:"α"}]},
+ "Ra-226": {A:226,Z:88,sym:"Ra",hl:"1600 år", decays:[{to:"Rn-222",type:"α"}]},
+ "Rn-222": {A:222,Z:86,sym:"Rn",hl:"3.8215 d", decays:[{to:"Po-218",type:"α"}]},
+ "Po-218": {A:218,Z:84,sym:"Po",hl:"3.10 min", decays:[{to:"Pb-214",type:"α"},{to:"At-218",type:"β⁻"}]},
+ "At-218": {A:218,Z:85,sym:"At",hl:"1.5 s", decays:[{to:"Bi-214",type:"α"},{to:"Rn-218",type:"β⁻"}]},
+ "Rn-218": {A:218,Z:86,sym:"Rn",hl:"0.035 s", decays:[{to:"Po-214",type:"α"}]},
+ "Pb-214": {A:214,Z:82,sym:"Pb",hl:"26.8 min", decays:[{to:"Bi-214",type:"β⁻"}]},
+ "Bi-214": {A:214,Z:83,sym:"Bi",hl:"19.9 min", decays:[{to:"Po-214",type:"β⁻"},{to:"Tl-210",type:"α"}]},
+ "Po-214": {A:214,Z:84,sym:"Po",hl:"164 µs", decays:[{to:"Pb-210",type:"α"}]},
+ "Tl-210": {A:210,Z:81,sym:"Tl",hl:"1.3 min", decays:[{to:"Pb-210",type:"β⁻"}]},
+ "Pb-210": {A:210,Z:82,sym:"Pb",hl:"22.2 år", decays:[{to:"Bi-210",type:"β⁻"}]},
+ "Bi-210": {A:210,Z:83,sym:"Bi",hl:"5.013 d", decays:[{to:"Po-210",type:"β⁻"}]},
+ "Po-210": {A:210,Z:84,sym:"Po",hl:"138 d", decays:[{to:"Pb-206",type:"α"}]},
+ "Pb-206": {A:206,Z:82,sym:"Pb",hl:"stabil", decays:[]}
+};
+
+/* ===============================
+   STATE
+   =============================== */
+let current = "U-238";
+const stack = [];         // for "Gå tilbage"
+const trail = [];         // log: {from,type,to}
+let triesAll = 0;         // samlede svarforsøg
+let triesFirstOK = 0;     // rigtige på første forsøg
+let firstTryOnThisStep = true;
+let chosenChild = null;   // bruges mellem Trin A og Trin B
+
+/* ===============================
+   DOM helpers
+   =============================== */
+const $ = (id)=>document.getElementById(id);
+const quizEl = $("quiz");
+const pathListEl = $("pathList");
+const scoreOKEl = $("scoreOK");
+const scoreAllEl = $("scoreAll");
+const miniSVG = $("mini");
+const makeNuclide = (n)=>`<span class="nuclide"><sup>${n.A}</sup><sub>${n.Z}</sub>${n.sym}</span>`;
+const scrollCenter=(el)=>{
+  const r=el.getBoundingClientRect(), y=r.top+window.scrollY - (window.innerHeight/2 - r.height/2);
+  window.scrollTo({top:Math.max(0,y-20), behavior:"smooth"});
+};
+
+/* ===============================
+   Utils til valgmuligheder
+   =============================== */
+function shuffle(arr){ return arr.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]); }
+function pickDistractors(correctIds, k){
+  const pool = Object.keys(chain).filter(id =>
+    id!=="Pb-206" && id!==current && !correctIds.includes(id)
+  );
+  return shuffle(pool).slice(0, Math.max(0,k));
+}
+function typeClass(t){ return t==="α" ? "is-alpha" : t==="β⁻" ? "is-beta" : "is-gamma"; }
+function typeLabel(t){ return t==="IT" ? "IT/γ" : t; }
+
+/* ===============================
+   TRIN A — Givet strålingstypen, hvad er datteren?
+   =============================== */
+function renderChooseDaughter(id){
+  chosenChild = null;
+  const n = chain[id];
+  quizEl.innerHTML = "";
+
+  // vælg en af de mulige typer for denne isotop
+  const possibleTypes = [...new Set(n.decays.map(d=>d.type))];
+  const chosenType = possibleTypes[Math.floor(Math.random()*possibleTypes.length)];
+  const correctDaughters = n.decays.filter(d=>d.type===chosenType).map(d=>d.to);
+
+  // valg (rigtige + distraktorer)
+  const distractors = pickDistractors(correctDaughters, Math.max(0, 4 - correctDaughters.length));
+  const options = shuffle([...correctDaughters, ...distractors]);
+
+  const card = document.createElement("div");
+  card.className = "quizCard";
+  card.innerHTML = `
+    <div class="question">
+      Trin A: Hvis ${makeNuclide(n)} henfalder ved
+      <span class="arrow ${typeClass(chosenType)}">⟶ ${typeLabel(chosenType)}</span>,
+      hvad bliver datteren?
+    </div>
+
+    <div class="nuclear-eq" style="margin-top:6px; font-size:22px">
+      ${makeNuclide(n)}
+      <span class="arrow ${typeClass(chosenType)}">⟶ ${typeLabel(chosenType)}</span>
+      <span class="nuclide">?</span>
+    </div>
+
+    <div class="choices">
+      ${options.map(toId=>{
+        const nn=chain[toId];
+        return `<div class="choice" data-to="${toId}">
+                  ${makeNuclide(nn)}
+                  <div class="miniText">${nn.hl}</div>
+                </div>`;
+      }).join("")}
+    </div>
+
+    <div id="feedbackA"></div>
+  `;
+  quizEl.appendChild(card);
+  scrollCenter(card);
+
+  const feedbackA = $("feedbackA");
+  card.querySelectorAll(".choice").forEach(btn=>{
+    btn.onclick = ()=>{
+      triesAll++;
+      const to = btn.getAttribute("data-to");
+      const correct = correctDaughters.includes(to);
+
+      if(correct){
+        if(firstTryOnThisStep) triesFirstOK++;
+        firstTryOnThisStep = false;
+        chosenChild = to;
+
+        const rule = chosenType==="α" ? "A−4 og Z−2" :
+                     chosenType==="β⁻" ? "Z+1 (n→p)" :
+                     "A og Z uændret";
+        feedbackA.className = "feedback ok";
+        feedbackA.innerHTML = `
+          ✔️ Rigtigt! ${typeLabel(chosenType)}‑henfald giver ${rule}.
+          <br>Næste: Hvilken strålingstype fører fra ${makeNuclide(n)} til ${makeNuclide(chain[to])}?
+        `;
+
+        setTimeout(()=>renderChooseTypeForChosen(id, chosenChild), 600);
+
+      } else {
+        firstTryOnThisStep = false;
+        const hint = chosenType==="α" ? "α: A−4, Z−2" :
+                     chosenType==="β⁻" ? "β⁻: Z+1" :
+                     "IT/γ: A,Z uændret";
+        feedbackA.className = "feedback err";
+        feedbackA.innerHTML = `❌ Ikke helt. Tjek bogføringen for ${typeLabel(chosenType)} (${hint}) og prøv igen.`;
+      }
+      updateScores();
+    };
+  });
+}
+
+/* ===============================
+   TRIN B — Hvilken type fører til netop denne datter?
+   =============================== */
+function renderChooseTypeForChosen(fromId, toId){
+  const from = chain[fromId], to = chain[toId];
+  const correctType = chain[fromId].decays.find(d=>d.to===toId).type;
+
+  quizEl.innerHTML = "";
+  const card = document.createElement("div");
+  card.className = "quizCard";
+  card.innerHTML = `
+    <div class="question">
+      Trin B: Hvilken strålingstype fører fra
+      ${makeNuclide(from)} til ${makeNuclide(to)}?
+    </div>
+
+    <div class="nuclear-eq" style="font-size:22px; margin:8px 0">
+      ${makeNuclide(from)} — ? → ${makeNuclide(to)}
+    </div>
+
+    <div class="choices three">
+      <div class="choice" data-type="α"><div class="alpha">α</div><div>Alfa</div></div>
+      <div class="choice" data-type="β⁻"><div class="beta">β⁻</div><div>Beta‑minus</div></div>
+      <div class="choice" data-type="IT"><div class="gamma">IT/γ</div><div>Isomer/γ</div></div>
+    </div>
+
+    <div id="feedbackB"></div>
+  `;
+  quizEl.appendChild(card);
+  scrollCenter(card);
+
+  const feedbackB = $("feedbackB");
+  card.querySelectorAll(".choice").forEach(btn=>{
+    btn.onclick = ()=>{
+      triesAll++;
+      const t = btn.getAttribute("data-type");
+      if(t===correctType){
+        if(firstTryOnThisStep) triesFirstOK++;
+        firstTryOnThisStep = true;
+
+        const why = t==="α" ? "A falder 4 og Z falder 2" :
+                    t==="β⁻" ? "Z stiger 1 (n→p + e⁻ + ν̄ₑ)" :
+                    "A og Z er uændrede (isomerisk overgang/γ)";
+        feedbackB.className="feedback ok";
+        feedbackB.innerHTML=`✔️ Korrekt! ${why}`;
+        setTimeout(()=>{ pushToTrail(fromId,t,toId); goTo(toId); }, 650);
+
+      } else {
+        firstTryOnThisStep = false;
+        feedbackB.className="feedback err";
+        feedbackB.innerHTML=`
+          ❌ Ikke korrekt. Husk:<br>
+          α: A−4, Z−2 · β⁻: Z+1 · IT/γ: A,Z uændret.
+        `;
+      }
+      updateScores();
+    };
+  });
+}
+
+/* ===============================
+   Navigation, sti og afslutning
+   =============================== */
+function pushToTrail(from,type,to){
+  stack.push(from);
+  trail.push({from,type,to});
+}
+function goTo(id){
+  current = id;
+  if (chain[id].decays.length===0) renderEndCard(id);
+  else renderChooseDaughter(id);
+  renderSide(); renderMini();
+}
+function renderEndCard(id){
+  quizEl.innerHTML = "";
+  const card = document.createElement("div");
+  card.className = "quizCard";
+  card.innerHTML = `
+    <div class="question">${makeNuclide(chain[id])}</div>
+    <div class="feedback ok"><strong>Stabil isotop.</strong> Kæden er slut – flot klaret!</div>
+    <div class="children" style="margin-top:10px">
+      <button class="btn" id="btnRestart">🔁 Start forfra</button>
+    </div>
+  `;
+  quizEl.appendChild(card);
+  $("btnRestart").onclick = ()=>{ stack.length=0; trail.length=0; current="U-238"; triesAll=0; triesFirstOK=0; renderAll(); };
+  scrollCenter(card);
+}
+
+/* ===============================
+   Sidepanel (sti + score)
+   =============================== */
+function renderSide(){
+  pathListEl.innerHTML="";
+  const first = document.createElement("li");
+  first.innerHTML = `Start: ${makeNuclide(chain["U-238"])}`;
+  pathListEl.appendChild(first);
+
+  trail.forEach((e,i)=>{
+    const li=document.createElement("li");
+    const a=document.createElement("a");
+    a.href="#"; a.textContent="Gå til dette trin"; a.dataset.i=i;
+    a.onclick=(ev)=>{ ev.preventDefault(); const idx=+ev.target.dataset.i;
+      current = trail[idx].to; trail.splice(idx+1); stack.splice(idx+1); renderAll(); };
+    li.innerHTML = `${makeNuclide(chain[e.from])} — <strong>${typeLabel(e.type)}</strong> → ${makeNuclide(chain[e.to])}<br>`;
+    li.appendChild(a);
+    pathListEl.appendChild(li);
+  });
+}
+function updateScores(){ scoreAllEl.textContent = String(triesAll); scoreOKEl.textContent = String(triesFirstOK); }
+
+/* ===============================
+   Minikort (BFS‑layout)
+   =============================== */
+function computeLevels(){
+  const levels = new Map(), byDepth = {};
+  const q=["U-238"]; levels.set("U-238",0);
+  while(q.length){
+    const u=q.shift(), d=levels.get(u);
+    (chain[u].decays||[]).forEach(e=>{
+      if(!levels.has(e.to)){ levels.set(e.to,d+1); q.push(e.to); }
+    });
+  }
+  for(const [id,d] of levels.entries()){ (byDepth[d] ||= []).push(id); }
+  Object.values(byDepth).forEach(a=>a.sort());
+  return {levels,byDepth};
+}
+function renderMini(){
+  const {byDepth} = computeLevels();
+  const dx=65, dy=24, pad=18;
+  const depthMax = Math.max(...Object.keys(byDepth).map(Number));
+  const height = Math.max(160, (Math.max(...Object.values(byDepth).map(a=>a.length))*dy) + pad*2);
+  const width  = pad*2 + dx*(depthMax+1);
+  miniSVG.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  miniSVG.innerHTML = "";
+  const pos = {};
+  Object.entries(byDepth).forEach(([dStr, ids])=>{
+    const d=parseInt(dStr,10);
+    ids.forEach((id,j)=>{ pos[id]={x:pad+d*dx, y:pad+j*dy+8}; });
+  });
+  // edges
+  for(const id of Object.keys(chain)){
+    const p1=pos[id]; if(!p1) continue;
+    (chain[id].decays||[]).forEach(e=>{
+      const p2=pos[e.to]; if(!p2) return;
+      const line=document.createElementNS("http://www.w3.org/2000/svg","line");
+      line.setAttribute("x1",p1.x); line.setAttribute("y1",p1.y);
+      line.setAttribute("x2",p2.x); line.setAttribute("y2",p2.y);
+      line.setAttribute("class","mini-link");
+      miniSVG.appendChild(line);
+    });
+  }
+  // nodes
+  for(const id of Object.keys(chain)){
+    const p=pos[id]; if(!p) continue;
+    const g=document.createElementNS("http://www.w3.org/2000/svg","g");
+    const c=document.createElementNS("http://www.w3.org/2000/svg","circle");
+    c.setAttribute("cx",p.x); c.setAttribute("cy",p.y); c.setAttribute("r",6);
+    let cls="mini-node";
+    if(chain[id].decays.length===0) cls+=" stable";
+    if(id===current) cls+=" current";
+    c.setAttribute("class",cls);
+    c.addEventListener("click", ()=>{ stack.length=0; trail.length=0; current=id; triesAll=0; triesFirstOK=0; renderAll(); });
+    const t=document.createElementNS("http://www.w3.org/2000/svg","text");
+    t.setAttribute("x",p.x+9); t.setAttribute("y",p.y+3); t.setAttribute("class","mini-label");
+    t.textContent = `${chain[id].sym}${chain[id].A}`;
+    g.appendChild(c); g.appendChild(t); miniSVG.appendChild(g);
+  }
+}
+
+/* ===============================
+   Top‑knapper
+   =============================== */
+$("btnHome").onclick = ()=>{ stack.length=0; trail.length=0; current="U-238"; triesAll=0; triesFirstOK=0; renderAll(); };
+$("btnBack").onclick = ()=>{
+  if(stack.length===0) return;
+  const prev = stack.pop();
+  if(trail.length>0) trail.pop();
+  current = prev; chosenChild=null; firstTryOnThisStep=true; renderAll();
+};
+$("btnClear").onclick = ()=>{ stack.length=0; trail.length=0; current="U-238"; triesAll=0; triesFirstOK=0; renderAll(); };
+$("btnHint").onclick = ()=>{
+  const n=chain[current];
+  const types = [...new Set(n.decays.map(d=>typeLabel(d.type)))].join(", ");
+  alert(`Hint til ${n.sym}-${n.A}:\nMulige strålingstyper: ${types}\n\nBogføring:\n  α: A−4, Z−2\n  β⁻: Z+1\n  IT/γ: A,Z uændret.`);
+};
+$("btnReveal").onclick = ()=>{
+  const n=chain[current];
+  const list = n.decays.map(d=>`${typeLabel(d.type)} → ${chain[d.to].sym}-${chain[d.to].A}`).join("\n");
+  alert(`Mulige henfald fra ${n.sym}-${n.A}:\n${list}`);
+};
+
+/* ===============================
+   Samlet render
+   =============================== */
+function renderAll(){ renderChooseDaughter(current); renderSide(); renderMini(); updateScores(); }
+renderAll();
+</script>
+</body>
+</html>
+``
