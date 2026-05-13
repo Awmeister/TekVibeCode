@@ -366,7 +366,8 @@
                                 level: row['Afdeling'] || 'Ukendt',
                                 author: row['Udvikler'] || 'Ukendt',
                                 url: row['URL'] || '#',
-                                date: row['Dato'] || '2026-01-01' 
+                                date: row['Dato'] || '2026-01-01',
+                                contact: row['Kontaktinfo'] || ''
                             }));
 
                             populateFilters();
@@ -440,6 +441,22 @@
                 const isFavorite = favorites.includes(item.id);
                 const isNew = newestIds.includes(item.id);
 
+                // Smart håndtering af kontaktinfo (Email eller URL)
+                let contactHtml = `> Udvikler: ${item.author}`;
+                if (item.contact) {
+                    let href = item.contact.trim();
+                    // Hvis det er en email (indeholder @ og starter ikke med http)
+                    if (href.includes('@') && !href.startsWith('http') && !href.startsWith('mailto:')) {
+                        href = `mailto:${href}`;
+                    } 
+                    // Hvis det er et link uden https:// forrest
+                    else if (!href.startsWith('http') && !href.startsWith('mailto:')) {
+                        href = `https://${href}`;
+                    }
+                    
+                    contactHtml = `> Udvikler: <a href="${href}" target="_blank" rel="noopener noreferrer" class="text-bauhaus-blue dark:text-bauhaus-yellow hover:text-bauhaus-red dark:hover:text-bauhaus-red hover:underline transition-colors inline-flex items-center gap-1 pointer-events-auto" title="Kontakt udvikleren">${item.author} <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg></a>`;
+                }
+
                 const cardWrapper = document.createElement('div');
                 cardWrapper.className = `boot-element block bg-bauhaus-white dark:bg-bauhaus-black border-[3px] border-bauhaus-black dark:border-bauhaus-white transition-all duration-200 hover:-translate-y-1 hover:-translate-x-1 hover:shadow-brutal-blue dark:hover:shadow-brutal-yellow flex flex-col h-full relative group`;
                 cardWrapper.style.animationDelay = `${index * 0.1}s`;
@@ -482,11 +499,11 @@
                     </a>
                     
                     <!-- Footer -->
-                    <div class="px-5 py-3 border-t-[3px] border-bauhaus-black dark:border-bauhaus-white flex justify-between items-center mt-auto bg-bauhaus-white dark:bg-bauhaus-black pointer-events-none">
-                        <span class="font-mono text-xs text-bauhaus-black dark:text-bauhaus-white font-bold">
-                            > Udvikler: ${item.author}
+                    <div class="px-5 py-3 border-t-[3px] border-bauhaus-black dark:border-bauhaus-white flex justify-between items-center mt-auto bg-bauhaus-white dark:bg-bauhaus-black">
+                        <span class="font-mono text-xs text-bauhaus-black dark:text-bauhaus-white font-bold z-10">
+                            ${contactHtml}
                         </span>
-                        <svg class="w-5 h-5 text-bauhaus-black dark:text-bauhaus-white group-hover:text-bauhaus-blue dark:group-hover:text-bauhaus-yellow transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                        <svg class="w-5 h-5 text-bauhaus-black dark:text-bauhaus-white group-hover:text-bauhaus-blue dark:group-hover:text-bauhaus-yellow transition-colors pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
                     </div>
                 `;
                 
