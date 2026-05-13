@@ -1,1 +1,728 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Afstandskvadratloven - Interaktiv Simulation</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8f0f8 100%);
+            padding: 20px;
+            color: #2c3e50;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 2.5em;
+        }
+
+        .intro {
+            text-align: center;
+            color: #5a6c7d;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .control-panel {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px;
+            border-radius: 15px;
+            color: white;
+        }
+
+        .control-panel h2 {
+            margin-bottom: 25px;
+            font-size: 1.5em;
+        }
+
+        .control-group {
+            margin-bottom: 30px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 12px;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            background: white;
+            color: #2c3e50;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        select:hover {
+            transform: translateY(-2px);
+        }
+
+        .slider-container {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.3);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            border: none;
+        }
+
+        .distance-display {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+
+        .visualization {
+            background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+            padding: 30px;
+            border-radius: 15px;
+            position: relative;
+            min-height: 400px;
+        }
+
+        .visualization h2 {
+            margin-bottom: 25px;
+            color: #2c3e50;
+            font-size: 1.5em;
+        }
+
+        .visual-scene {
+            position: relative;
+            height: 200px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .radioactive-source {
+            position: absolute;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle, #ff6b6b, #c92a2a);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: white;
+            box-shadow: 0 0 30px rgba(255, 107, 107, 0.6);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 0 30px rgba(255, 107, 107, 0.6);
+            }
+            50% {
+                box-shadow: 0 0 50px rgba(255, 107, 107, 0.9);
+            }
+        }
+
+        .gm-counter {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 50px;
+            height: 80px;
+            background: linear-gradient(135deg, #4a90e2, #357abd);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+            color: white;
+            transition: left 0.5s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .radiation-waves {
+            position: absolute;
+            left: 90px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+        }
+
+        .wave {
+            position: absolute;
+            border: 2px solid rgba(255, 107, 107, 0.5);
+            border-radius: 50%;
+            animation: wave-expand 2s infinite;
+        }
+
+        .wave:nth-child(2) {
+            animation-delay: 0.5s;
+        }
+
+        .wave:nth-child(3) {
+            animation-delay: 1s;
+        }
+
+        @keyframes wave-expand {
+            0% {
+                width: 0;
+                height: 0;
+                opacity: 1;
+            }
+            100% {
+                width: 200px;
+                height: 200px;
+                margin-left: -100px;
+                margin-top: -100px;
+                opacity: 0;
+            }
+        }
+
+        .measurements {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .measurement-item {
+            margin-bottom: 15px;
+            padding: 15px;
+            background: linear-gradient(135deg, #a8e6cf 0%, #88d8b0 100%);
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .measurement-label {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .measurement-value {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #1e3a3a;
+        }
+
+        .source-info {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 0.95em;
+            color: #5a6c7d;
+            line-height: 1.6;
+        }
+
+        .graph-container {
+            margin: 40px 0;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .graph-container h2 {
+            margin-bottom: 20px;
+            color: #2c3e50;
+            text-align: center;
+        }
+
+        .fact-boxes {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .fact-box {
+            background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
+            padding: 25px;
+            border-radius: 15px;
+            color: white;
+            transition: transform 0.3s;
+        }
+
+        .fact-box:hover {
+            transform: translateY(-5px);
+        }
+
+        .fact-box h3 {
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .fact-toggle {
+            background: rgba(255, 255, 255, 0.3);
+            border: 2px solid white;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .fact-toggle:hover {
+            background: white;
+            color: #19547b;
+        }
+
+        .fact-content {
+            line-height: 1.7;
+            font-size: 1em;
+        }
+
+        .fact-content.basic {
+            display: block;
+        }
+
+        .fact-content.advanced {
+            display: none;
+        }
+
+        .emoji {
+            font-size: 1.2em;
+            margin-right: 8px;
+        }
+
+        @media (max-width: 968px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>☢️ Afstandskvadratloven</h1>
+        <p class="intro">
+            Udforsk hvordan stråling fra radioaktive kilder aftager med afstanden. 
+            Flyt GM-tælleren frem og tilbage, og se hvordan stråledosis ændrer sig!
+        </p>
+
+        <div class="main-content">
+            <div class="control-panel">
+                <h2>🎛️ Kontrolpanel</h2>
+                
+                <div class="control-group">
+                    <label for="source-select">Vælg radioaktiv kilde:</label>
+                    <select id="source-select">
+                        <option value="am241">Am-241 (Americium-241) - Alfastråling</option>
+                        <option value="sr90">Sr-90 (Strontium-90) - Betastråling</option>
+                        <option value="cs137">Cs-137 (Cæsium-137) - Gammastråling</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label for="distance-slider">Afstand fra kilde til GM-tæller:</label>
+                    <div class="slider-container">
+                        <input type="range" id="distance-slider" min="10" max="200" value="50" step="1">
+                        <div class="distance-display">
+                            <span id="distance-value">50</span> cm
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="visualization">
+                <h2>📊 Visualisering</h2>
+                
+                <div class="visual-scene">
+                    <div class="radioactive-source">
+                        <span id="source-symbol">☢️</span>
+                    </div>
+                    <div class="radiation-waves">
+                        <div class="wave"></div>
+                        <div class="wave"></div>
+                        <div class="wave"></div>
+                    </div>
+                    <div class="gm-counter" id="gm-counter">
+                        📡
+                    </div>
+                </div>
+
+                <div class="measurements">
+                    <div class="measurement-item">
+                        <span class="measurement-label">Afstand:</span>
+                        <span class="measurement-value"><span id="distance-display">50</span> cm</span>
+                    </div>
+                    <div class="measurement-item">
+                        <span class="measurement-label">Stråledosis (relativ):</span>
+                        <span class="measurement-value" id="dose-display">100%</span>
+                    </div>
+                    <div class="measurement-item">
+                        <span class="measurement-label">Intensitet:</span>
+                        <span class="measurement-value" id="intensity-display">1.00</span>
+                    </div>
+                </div>
+
+                <div class="source-info" id="source-info">
+                    <strong>Am-241 (Americium-241)</strong><br>
+                    Udsender alfastråling. Bruges i ioniserende røgalarmer. 
+                    Aktivitet: ~37 kBq (1 µCi).
+                </div>
+            </div>
+        </div>
+
+        <div class="graph-container">
+            <h2>📈 Graf: Stråleintensitet som funktion af afstand</h2>
+            <div id="plot"></div>
+        </div>
+
+        <div class="fact-boxes">
+            <div class="fact-box" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
+                <h3>
+                    <span><span class="emoji">📏</span>Afstandskvadratloven</span>
+                    <button class="fact-toggle" onclick="toggleFact(0)">Mere info</button>
+                </h3>
+                <div class="fact-content basic" id="fact-0-basic">
+                    Når du fordobler afstanden til en strålingskilde, bliver strålingen fire gange svagere. 
+                    Ved tre gange afstanden bliver den ni gange svagere.
+                </div>
+                <div class="fact-content advanced" id="fact-0-advanced">
+                    Afstandskvadratloven beskriver hvordan stråleintensitet aftager proportionalt med kvadratet 
+                    på afstanden: I = I₀/r². Dette betyder at intensiteten falder med 1/r². 
+                    Loven gælder for alle former for stråling der spredes ligeligt i alle retninger 
+                    (punktkilder), inklusive lys, lyd og ioniserende stråling.
+                </div>
+            </div>
+
+            <div class="fact-box" style="background: linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%);">
+                <h3>
+                    <span><span class="emoji">⚡</span>Aktivitet</span>
+                    <button class="fact-toggle" onclick="toggleFact(1)">Mere info</button>
+                </h3>
+                <div class="fact-content basic" id="fact-1-basic">
+                    Aktivitet er et mål for hvor mange atomkerner der henfalder (går i stykker) per sekund 
+                    i en radioaktiv kilde. Jo højere aktivitet, jo mere stråling.
+                </div>
+                <div class="fact-content advanced" id="fact-1-advanced">
+                    Aktivitet (A) måles i enheden Becquerel (Bq), hvor 1 Bq = 1 henfald per sekund. 
+                    En typisk røgalarm med Am-241 har en aktivitet på ca. 37.000 Bq (37 kBq). 
+                    Aktiviteten aftager over tid ifølge halveringstiden: A(t) = A₀ · (½)^(t/T½), 
+                    hvor T½ er halveringstiden.
+                </div>
+            </div>
+
+            <div class="fact-box" style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);">
+                <h3>
+                    <span><span class="emoji">🛡️</span>Halveringstykkelse</span>
+                    <button class="fact-toggle" onclick="toggleFact(2)">Mere info</button>
+                </h3>
+                <div class="fact-content basic" id="fact-2-basic">
+                    Halveringstykkelse fortæller hvor tyk en barriere skal være for at halvere strålingens styrke. 
+                    Alfastråling stoppes af papir, mens gammastråling kræver bly eller meget tykke materialer.
+                </div>
+                <div class="fact-content advanced" id="fact-2-advanced">
+                    Halveringstykkelsen afhænger af både strålingstypen og materialet. For gammastråling i bly 
+                    er halveringstykkelsen ca. 1 cm. Alfapartikler stoppes af få cm luft eller et stykke papir. 
+                    Betapartikler kræver nogle mm aluminium. Formlen: I = I₀ · (½)^(x/d½), 
+                    hvor x er materialets tykkelse og d½ er halveringstykkelsen.
+                </div>
+            </div>
+
+            <div class="fact-box" style="background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);">
+                <h3>
+                    <span><span class="emoji">💉</span>Stråledosis</span>
+                    <button class="fact-toggle" onclick="toggleFact(3)">Mere info</button>
+                </h3>
+                <div class="fact-content basic" id="fact-3-basic">
+                    Stråledosis er et mål for hvor meget stråleenergi der absorberes i kroppen. 
+                    Jo større dosis, desto større risiko for skader. Det måles i Sievert (Sv).
+                </div>
+                <div class="fact-content advanced" id="fact-3-advanced">
+                    Den ækvivalente dosis måles i Sievert (Sv). Typiske doser: baggrundsstråling ~2-3 mSv/år, 
+                    røntgen af brystkasse ~0.1 mSv, CT-scanning ~10 mSv. Dosis beregnes som: 
+                    H = D · w_R, hvor D er absorberet dosis (Gray) og w_R er strålingsvægtfaktoren 
+                    (1 for beta/gamma, 20 for alfa). Afstandskvadratloven hjælper med at reducere 
+                    modtaget dosis ved at øge afstanden til kilden.
+                </div>
+            </div>
+
+            <div class="fact-box" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                <h3>
+                    <span><span class="emoji">📊</span>Bq (Becquerel)</span>
+                    <button class="fact-toggle" onclick="toggleFact(4)">Mere info</button>
+                </h3>
+                <div class="fact-content basic" id="fact-4-basic">
+                    Becquerel (Bq) er enheden for radioaktiv aktivitet. 1 Bq betyder at ét atomkerne 
+                    henfalder per sekund. Det er opkaldt efter fysikeren Henri Becquerel.
+                </div>
+                <div class="fact-content advanced" id="fact-4-advanced">
+                    1 Becquerel (Bq) = 1 henfald per sekund. Den ældre enhed Curie (Ci) bruges stadig: 
+                    1 Ci = 37 GBq (37 milliarder Bq), svarende til aktiviteten af 1 gram radium-226. 
+                    Eksempler: bananvæv ~15 Bq/kg (pga. kalium-40), menneskekrop ~4000 Bq totalt, 
+                    medicinsk tracer til PET-scanning ~400 MBq. Aktiviteten aftager eksponentielt over tid.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const sources = {
+            am241: {
+                name: 'Am-241 (Americium-241)',
+                type: 'Alfastråling',
+                activity: 37,
+                unit: 'kBq',
+                description: 'Udsender alfastråling. Bruges i ioniserende røgalarmer. Aktivitet: ~37 kBq (1 µCi).',
+                symbol: 'α',
+                color: '#ff6b6b'
+            },
+            sr90: {
+                name: 'Sr-90 (Strontium-90)',
+                type: 'Betastråling',
+                activity: 74,
+                unit: 'kBq',
+                description: 'Udsender beta-minus stråling. Dannes ved kernespaltning. Aktivitet: ~74 kBq (2 µCi).',
+                symbol: 'β⁻',
+                color: '#4ecdc4'
+            },
+            cs137: {
+                name: 'Cs-137 (Cæsium-137)',
+                type: 'Gammastråling',
+                activity: 370,
+                unit: 'kBq',
+                description: 'Udsender gammastråling. Bruges til medicinske og industrielle formål. Aktivitet: ~370 kBq (10 µCi).',
+                symbol: 'γ',
+                color: '#9b59b6'
+            }
+        };
+
+        let currentSource = 'am241';
+        let currentDistance = 50;
+        const referenceDistance = 50;
+
+        function calculateIntensity(distance) {
+            return Math.pow(referenceDistance / distance, 2);
+        }
+
+        function updateVisualization() {
+            const distance = parseFloat(document.getElementById('distance-slider').value);
+            currentDistance = distance;
+            
+            document.getElementById('distance-value').textContent = distance;
+            document.getElementById('distance-display').textContent = distance;
+            
+            const intensity = calculateIntensity(distance);
+            const relativeIntensity = intensity * 100;
+            
+            document.getElementById('dose-display').textContent = relativeIntensity.toFixed(1) + '%';
+            document.getElementById('intensity-display').textContent = intensity.toFixed(3);
+            
+            const gmCounter = document.getElementById('gm-counter');
+            const sceneWidth = gmCounter.parentElement.offsetWidth;
+            const sourceLeft = 30;
+            const maxDistance = 200;
+            const minDistance = 10;
+            const availableWidth = sceneWidth - sourceLeft - 90;
+            
+            const position = sourceLeft + 60 + (availableWidth * (distance - minDistance) / (maxDistance - minDistance));
+            gmCounter.style.left = position + 'px';
+            
+            updateGraph();
+        }
+
+        function updateSource() {
+            const select = document.getElementById('source-select');
+            currentSource = select.value;
+            const source = sources[currentSource];
+            
+            document.getElementById('source-info').innerHTML = `
+                <strong>${source.name}</strong><br>
+                ${source.description}
+            `;
+            
+            document.getElementById('source-symbol').textContent = source.symbol;
+            
+            const sourceElement = document.querySelector('.radioactive-source');
+            const gradients = {
+                am241: 'radial-gradient(circle, #ff6b6b, #c92a2a)',
+                sr90: 'radial-gradient(circle, #4ecdc4, #16a085)',
+                cs137: 'radial-gradient(circle, #9b59b6, #6c3483)'
+            };
+            sourceElement.style.background = gradients[currentSource];
+            
+            updateGraph();
+        }
+
+        function updateGraph() {
+            const distances = [];
+            const intensities = [];
+            
+            for (let d = 10; d <= 200; d += 2) {
+                distances.push(d);
+                intensities.push(calculateIntensity(d) * 100);
+            }
+            
+            const currentIntensity = calculateIntensity(currentDistance) * 100;
+            
+            const trace1 = {
+                x: distances,
+                y: intensities,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Intensitet',
+                line: {
+                    color: '#667eea',
+                    width: 3
+                }
+            };
+            
+            const trace2 = {
+                x: [currentDistance],
+                y: [currentIntensity],
+                type: 'scatter',
+                mode: 'markers',
+                name: 'Nuværende position',
+                marker: {
+                    color: '#ff6b6b',
+                    size: 12,
+                    symbol: 'circle'
+                }
+            };
+            
+            const layout = {
+                xaxis: {
+                    title: 'Afstand (cm)',
+                    gridcolor: '#e1e8ed'
+                },
+                yaxis: {
+                    title: 'Relativ intensitet (%)',
+                    gridcolor: '#e1e8ed'
+                },
+                plot_bgcolor: '#f8f9fa',
+                paper_bgcolor: 'white',
+                font: {
+                    family: 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif',
+                    size: 12,
+                    color: '#2c3e50'
+                },
+                showlegend: true,
+                legend: {
+                    x: 0.7,
+                    y: 0.95
+                },
+                margin: {
+                    l: 60,
+                    r: 30,
+                    t: 30,
+                    b: 60
+                }
+            };
+            
+            const config = {
+                responsive: true,
+                displayModeBar: false
+            };
+            
+            Plotly.newPlot('plot', [trace1, trace2], layout, config);
+        }
+
+        function toggleFact(index) {
+            const basicElement = document.getElementById(`fact-${index}-basic`);
+            const advancedElement = document.getElementById(`fact-${index}-advanced`);
+            const button = event.target;
+            
+            if (basicElement.style.display !== 'none') {
+                basicElement.style.display = 'none';
+                advancedElement.style.display = 'block';
+                button.textContent = 'Grundlæggende';
+            } else {
+                basicElement.style.display = 'block';
+                advancedElement.style.display = 'none';
+                button.textContent = 'Mere info';
+            }
+        }
+
+        document.getElementById('distance-slider').addEventListener('input', updateVisualization);
+        document.getElementById('source-select').addEventListener('change', updateSource);
+        
+        window.addEventListener('load', function() {
+            updateVisualization();
+            updateSource();
+        });
+    </script>
+</body>
+</html>
 
