@@ -18,8 +18,13 @@
                     colors: {
                         bauhaus: {
                             red: '#D9381E',
+                            'red-dark': '#9A2411',
+                            'red-light': '#E46B55',
                             blue: '#005A9C',
+                            'blue-dark': '#003966',
+                            'blue-light': '#4080B5',
                             yellow: '#FFC72C',
+                            'yellow-dark': '#C99812',
                             black: '#121212',
                             white: '#F4F4F4',
                             lightgray: '#E5E5E5',
@@ -300,6 +305,7 @@
         const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRnD6NwkcKN6F1SS0ZyIO3tleSPC-Z5baumH4oR5OPuXnwH7hkVkscUxRvLQcHyIkM3wDk_Bp1DEM3B/pub?output=csv";
 
         let examplesData = [];
+        let subjectColorMap = {}; // Holder styr på fag-farverne
 
         const gridContainer = document.getElementById('grid-container');
         const searchInput = document.getElementById('search-input');
@@ -401,7 +407,24 @@
             const subjects = [...new Set(examplesData.map(item => item.subject))].sort();
             const levels = [...new Set(examplesData.map(item => item.level))].sort();
 
-            subjects.forEach(subject => {
+            // Udvidet Bauhaus farvepalette med flere nuancer + sort/grå for maksimal spredning
+            const bauhausColors = [
+                { bg: 'bg-bauhaus-yellow', text: 'text-bauhaus-black' },
+                { bg: 'bg-bauhaus-blue', text: 'text-bauhaus-white' },
+                { bg: 'bg-bauhaus-red', text: 'text-bauhaus-white' },
+                { bg: 'bg-bauhaus-black', text: 'text-bauhaus-white' }, // Sort er en ægte Bauhaus kontrast
+                { bg: 'bg-bauhaus-blue-dark', text: 'text-bauhaus-white' },
+                { bg: 'bg-bauhaus-yellow-dark', text: 'text-bauhaus-black' },
+                { bg: 'bg-bauhaus-red-dark', text: 'text-bauhaus-white' },
+                { bg: 'bg-bauhaus-blue-light', text: 'text-bauhaus-white' },
+                { bg: 'bg-bauhaus-lightgray', text: 'text-bauhaus-black' },
+                { bg: 'bg-bauhaus-red-light', text: 'text-bauhaus-black' }
+            ];
+
+            subjects.forEach((subject, index) => {
+                // Tildeler automatisk farverne i rotation til de forskellige fag
+                subjectColorMap[subject] = bauhausColors[index % bauhausColors.length];
+
                 const option = document.createElement('option');
                 option.value = subject;
                 option.textContent = subject;
@@ -441,17 +464,8 @@
                 const isFavorite = favorites.includes(item.id);
                 const isNew = newestIds.includes(item.id);
 
-                // Generer en fast Bauhaus-farve baseret på fagets navn (så fx "Matematik" altid har samme farve)
-                const bauhausColors = [
-                    { bg: 'bg-bauhaus-yellow', text: 'text-bauhaus-black' },
-                    { bg: 'bg-bauhaus-blue', text: 'text-bauhaus-white' },
-                    { bg: 'bg-bauhaus-red', text: 'text-bauhaus-white' }
-                ];
-                let hash = 0;
-                for (let i = 0; i < item.subject.length; i++) {
-                    hash = item.subject.charCodeAt(i) + ((hash << 5) - hash);
-                }
-                const subjectStyle = bauhausColors[Math.abs(hash) % bauhausColors.length];
+                // Henter den farve vi tildelte faget (fallback til gul)
+                const subjectStyle = subjectColorMap[item.subject] || { bg: 'bg-bauhaus-yellow', text: 'text-bauhaus-black' };
 
                 // Smart håndtering af kontaktinfo (Email eller URL)
                 let contactHtml = `> Udvikler: ${item.author}`;
@@ -498,7 +512,7 @@
                             ${isNew ? `<span class="absolute right-0 font-mono text-xs px-2 py-1 bg-bauhaus-blue text-bauhaus-white border-[2px] border-bauhaus-black dark:border-bauhaus-white uppercase font-bold animate-pulse">NY!</span>` : ''}
                         </div>
                         
-                        <h3 class="text-xl font-black mb-3 text-bauhaus-black dark:text-bauhaus-white uppercase group-hover:text-bauhaus-blue dark:group-hover:text-bauhaus-yellow transition-colors">
+                        <h3 class="text-xl font-black mb-3 text-bauhaus-black dark:text-bauhaus-white uppercase group-hover:text-bauhaus-blue dark:group-hover:text-bauhaus-yellow transition-colors break-words">
                             ${item.title}
                         </h3>
                         
