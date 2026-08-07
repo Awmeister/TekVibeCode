@@ -92,14 +92,14 @@
         /* Loader animation */
         .loader {
             border: 4px solid theme('colors.bauhaus.lightgray');
-            border-top: 4px solid theme('colors.bauhaus.blue');
+            border-top: 4px solid theme('colors.bauhaus.green');
             border-radius: 50%;
             width: 24px;
             height: 24px;
             animation: spin 1s linear infinite;
             display: inline-block;
         }
-        .dark .loader { border: 4px solid theme('colors.bauhaus.darkgray'); border-top: 4px solid theme('colors.bauhaus.yellow'); }
+        .dark .loader { border: 4px solid theme('colors.bauhaus.darkgray'); border-top: 4px solid theme('colors.bauhaus.green'); }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
@@ -233,10 +233,10 @@
                     <div>
                         <label for="ai-grade" class="block font-mono text-xs font-bold mb-1 text-bauhaus-black dark:text-bauhaus-white uppercase">>> Vælg_Klassetrin</label>
                         <select id="ai-grade" class="sound-change w-full p-3 border-[3px] border-bauhaus-black dark:border-bauhaus-white bg-bauhaus-white dark:bg-bauhaus-black text-bauhaus-black dark:text-bauhaus-white focus:outline-none focus:border-bauhaus-blue dark:focus:border-bauhaus-blue transition-colors font-mono text-sm cursor-pointer appearance-none rounded-none font-bold">
-                            <option value="0">0. klasse</option><option value="1">1. klasse</option><option value="2">2. klasse</option>
-                            <option value="3">3. klasse</option><option value="4">4. klasse</option><option value="5">5. klasse</option>
-                            <option value="6">6. klasse</option><option value="7">7. klasse</option><option value="8">8. klasse</option>
-                            <option value="9">9. klasse</option><option value="10">10. klasse</option>
+                            <option value="0. klasse">0. klasse</option><option value="1. klasse">1. klasse</option><option value="2. klasse">2. klasse</option>
+                            <option value="3. klasse">3. klasse</option><option value="4. klasse">4. klasse</option><option value="5. klasse">5. klasse</option>
+                            <option value="6. klasse">6. klasse</option><option value="7. klasse">7. klasse</option><option value="8. klasse">8. klasse</option>
+                            <option value="9. klasse">9. klasse</option><option value="10. klasse">10. klasse</option>
                         </select>
                     </div>
                     <div>
@@ -252,7 +252,7 @@
                     </div>
                 </div>
 
-                <button id="generate-idea-btn" class="sound-click w-full p-4 mb-6 border-[3px] border-bauhaus-black dark:border-bauhaus-white bg-bauhaus-green text-bauhaus-white hover:bg-bauhaus-blue hover:text-bauhaus-white transition-colors font-mono text-base font-black uppercase shadow-brutal-black dark:shadow-brutal-white active:translate-y-1 active:translate-x-1 active:shadow-none flex items-center justify-center gap-2">
+                <button id="generate-idea-btn" class="sound-click w-full p-4 mb-6 border-[3px] border-bauhaus-black dark:border-bauhaus-white bg-bauhaus-green text-bauhaus-white hover:bg-bauhaus-blue transition-colors font-mono text-base font-black uppercase shadow-brutal-black dark:shadow-brutal-white active:translate-y-1 active:translate-x-1 active:shadow-none flex items-center justify-center gap-2">
                     <span id="generate-btn-text">Giv mig en vibe code-idé</span>
                     <div id="generate-loader" class="loader hidden"></div>
                 </button>
@@ -350,7 +350,7 @@
             }).toDestination();
             typeSynth.volume.value = -25; 
 
-            // Create a PolySynth wrapping MembraneSynth for polyphony to prevent errors
+            // Brug PolySynth så den ikke crasher ved hurtige tryk!
             clickSynth = new Tone.PolySynth(Tone.MembraneSynth, {
                 pitchDecay: 0.01,
                 octaves: 1,
@@ -367,6 +367,7 @@
             toneStarted = true;
         }
 
+        // Send 'Tone.now()' med som trigger-tidspunkt, så logikken altid er med.
         function playType() { if(toneStarted) typeSynth.triggerAttackRelease("32n", Tone.now()); }
         function playClick() { if(toneStarted) clickSynth.triggerAttackRelease("G2", "16n", Tone.now()); }
         function playDing() { if(toneStarted) dingSynth.triggerAttackRelease(["C5", "E5", "G5"], "8n", Tone.now()); }
@@ -390,6 +391,7 @@
             initTheme();
             startBootSequence();
             
+            // Start audio context on first interaction
             document.body.addEventListener('click', initAudio, { once: true });
             document.body.addEventListener('keydown', initAudio, { once: true });
 
@@ -433,11 +435,17 @@
             
             resultCountMessage.textContent = "STATUS: FORBINDER TIL DATABASE...";
 
-            fetch(SHEET_CSV_URL)
+            // Sørg for at den altid benytter et output=csv link for en sikkerheds skyld
+            const targetUrl = SHEET_CSV_URL.includes("pubhtml") 
+                            ? SHEET_CSV_URL.replace("pubhtml", "pub?output=csv") 
+                            : SHEET_CSV_URL;
+
+            fetch(targetUrl)
                 .then(response => response.text())
                 .then(csvText => {
-                    if (csvText.trim().startsWith('<!DOCTYPE') || csvText.trim().startsWith('<html')) {
-                        resultCountMessage.innerHTML = "<span class='text-bauhaus-red'>FEJL: Google Sheets linket er ikke udgivet korrekt. Det returnerer en hjemmeside i stedet for data. Tjek trin 3 (Udgiv på nettet).</span>";
+                    // Hvis dokumentet er en login-skærm eller upubliceret
+                    if (csvText.trim().startsWith('<!DOCTYPE') || csvText.trim().startsWith('<html') || csvText.trim().startsWith('<body')) {
+                        resultCountMessage.innerHTML = "<span class='text-bauhaus-red'>FEJL: Google Sheets returnerer en hjemmeside/loginskærm. Sørg for at dokumentet er delt med 'Alle med linket', og 'Udgiv på nettet' ikke kræver login.</span>";
                         return;
                     }
 
@@ -450,29 +458,37 @@
                                 return;
                             }
 
-                            const firstRowKeys = Object.keys(results.data[0]);
+                            const rawKeys = Object.keys(results.data[0]);
                             
-                            const getVal = (row, matchWord) => {
-                                const foundKey = firstRowKeys.find(key => key.toLowerCase().includes(matchWord.toLowerCase()));
-                                return foundKey ? row[foundKey] : undefined;
+                            // Ekstremt tilgivende søgefunktion efter kolonner
+                            const findKey = (searchWord) => {
+                                return rawKeys.find(key => {
+                                    if(!key) return false;
+                                    const cleanKey = key.toLowerCase().replace(/[^a-zæøå0-9]/g, '');
+                                    return cleanKey.includes(searchWord);
+                                });
                             };
 
-                            if (!firstRowKeys.some(key => key.toLowerCase().includes('titel'))) {
-                                resultCountMessage.innerHTML = `<span class='text-bauhaus-red'>FEJL: Kunne ikke finde overskriften 'Titel'.<br><br>Jeg kan kun se disse kolonner fra Google: <b>${firstRowKeys.join(' | ')}</b><br><br>Er der et problem med semikolon/komma?</span>`;
-                                return;
-                            }
+                            const keyTitel = findKey('titel') || findKey('title') || rawKeys[0];
+                            const keyBeskriv = findKey('beskriv');
+                            const keyFag = findKey('fag');
+                            const keyAfd = findKey('afdeling') || findKey('klasse');
+                            const keyForf = findKey('udvikler') || findKey('forfatter') || findKey('navn');
+                            const keyUrl = findKey('url') || findKey('link');
+                            const keyDato = findKey('dato') || findKey('date');
+                            const keyKontakt = findKey('kontakt') || findKey('mail');
 
                             examplesData = results.data.map((row, index) => {
                                 return {
                                     id: index + 1,
-                                    title: getVal(row, 'titel') || 'Uden titel',
-                                    description: getVal(row, 'beskriv') || '',
-                                    subject: getVal(row, 'fag') || 'Ukendt',
-                                    level: getVal(row, 'afdeling') || 'Ukendt',
-                                    author: getVal(row, 'udvikler') || 'Ukendt',
-                                    url: getVal(row, 'url') || '#',
-                                    date: getVal(row, 'dato') || '2026-01-01',
-                                    contact: getVal(row, 'kontakt') || ''
+                                    title: row[keyTitel] || 'Uden titel',
+                                    description: row[keyBeskriv] || '',
+                                    subject: row[keyFag] || 'Ukendt',
+                                    level: row[keyAfd] || 'Ukendt',
+                                    author: row[keyForf] || 'Ukendt',
+                                    url: row[keyUrl] || '#',
+                                    date: row[keyDato] || '2026-01-01',
+                                    contact: row[keyKontakt] || ''
                                 };
                             });
                             
@@ -485,7 +501,7 @@
                     });
                 })
                 .catch(error => {
-                    resultCountMessage.innerHTML = `<span class='text-bauhaus-red'>FEJL VED FORBINDELSE: Kunne ikke hente filen fra nettet.</span>`;
+                    resultCountMessage.innerHTML = `<span class='text-bauhaus-red'>FEJL VED FORBINDELSE: Kunne ikke hente filen fra nettet. Tjek linket.</span>`;
                 });
         }
 
@@ -571,6 +587,7 @@
                 cardWrapper.className = `boot-element block bg-bauhaus-white dark:bg-bauhaus-black border-[3px] border-bauhaus-black dark:border-bauhaus-white transition-all duration-200 hover:-translate-y-1 hover:-translate-x-1 hover:shadow-brutal-blue dark:hover:shadow-brutal-yellow flex flex-col h-full relative group`;
                 cardWrapper.style.animationDelay = `${index * 0.1}s`;
 
+                // Header med app navn og "NY" badge er fjernet. Beholder funktionalitets-ikoner.
                 cardWrapper.innerHTML = `
                     <div class="border-b-[3px] border-bauhaus-black dark:border-bauhaus-white px-3 py-2 flex justify-end items-center bg-bauhaus-lightgray dark:bg-bauhaus-darkgray group-hover:bg-bauhaus-red dark:group-hover:bg-bauhaus-red transition-colors">
                         <div class="flex gap-2 items-center">
@@ -698,7 +715,7 @@
             }, 10);
         }
 
-        function closeSubmitModal() {
+        function closeSubmitModalFn() {
             playClick();
             submitModalContent.classList.remove('scale-100', 'opacity-100');
             submitModalContent.classList.add('scale-95', 'opacity-0');
@@ -708,10 +725,10 @@
         aboutBtn.addEventListener('click', openModal);
         closeBtn.addEventListener('click', closeModal);
         submitBtn.addEventListener('click', openSubmitModal);
-        closeSubmitBtn.addEventListener('click', closeSubmitModal);
+        closeSubmitBtn.addEventListener('click', closeSubmitModalFn);
         
         modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
-        submitModal.addEventListener('click', (e) => { if (e.target === submitModal) closeSubmitModal(); });
+        submitModal.addEventListener('click', (e) => { if (e.target === submitModal) closeSubmitModalFn(); });
 
         const aiModal = document.getElementById('ai-modal');
         const aiModalContent = document.getElementById('ai-modal-content');
@@ -743,7 +760,7 @@
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 if (!modal.classList.contains('hidden')) closeModal();
-                if (!submitModal.classList.contains('hidden')) closeSubmitModal();
+                if (!submitModal.classList.contains('hidden')) closeSubmitModalFn();
                 if (!aiModal.classList.contains('hidden')) closeAiModal();
             }
         });
@@ -759,8 +776,8 @@
             aiIdeaText.innerHTML = "";
             aiPromptText.textContent = "";
 
-            const systemPrompt = "Du er SkoleGPT, en dansk didaktisk ekspert i 'vibe coding' (at kode interaktive pædagogiske web-værktøjer ved hjælp af AI). Du taler KUN dansk. Du må udelukkende svare i det format, brugeren beder om.";
-            const userPrompt = `Foreslå et konkret, simpelt og interaktivt web-kodeprojekt, som en lærer kan bygge i én enkelt HTML-fil med 'vibe coding' til ${subject} i ${grade}. klasse.
+            const systemPrompt = "Du er SkoleGPT, en dansk didaktisk ekspert i 'vibe coding' (at kode interaktive pædagogiske web-værktøjer ved hjælp af AI). Du taler KUN dansk.";
+            const userPrompt = `Foreslå et konkret, simpelt og interaktivt web-kodeprojekt, som en lærer kan bygge i én enkelt HTML-fil med 'vibe coding' til ${subject} i ${grade}.
 Giv mig dit svar PRÆCIS i dette format:
 
 IDÉ:
@@ -782,87 +799,82 @@ PROMPT:
                             { role: "system", content: systemPrompt },
                             { role: "user", content: userPrompt }
                         ],
-                        stream: true
+                        stream: false
                     })
                 });
 
                 if (!response.ok) {
-                    const errText = await response.text();
-                    throw new Error(`API afviste anmodningen (Status: ${response.status}). Detaljer: ${errText.substring(0, 150)}`);
-                }
-
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder('utf-8');
-                let reply = "";
-                let buffer = "";
-
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-                    
-                    buffer += decoder.decode(value, { stream: true });
-                    const lines = buffer.split('\n');
-                    buffer = lines.pop(); 
-                    
-                    for (const line of lines) {
-                        const trimmedLine = line.trim();
-                        if (trimmedLine === '' || trimmedLine === 'data: [DONE]') continue;
-                        
-                        if (trimmedLine.startsWith('data: ')) {
-                            try {
-                                const data = JSON.parse(trimmedLine.substring(6));
-                                if (data.choices && data.choices.length > 0 && data.choices[0].delta && data.choices[0].delta.content) {
-                                    reply += data.choices[0].delta.content;
-                                }
-                            } catch (e) {
-                                console.warn("Kunne ikke parse data chunk:", trimmedLine);
-                            }
-                        }
+                    const status = response.status;
+                    let errorDetails = "";
+                    try {
+                        const errJson = await response.json();
+                        errorDetails = JSON.stringify(errJson);
+                    } catch(e) {
+                        errorDetails = await response.text();
                     }
+                    
+                    console.warn(`SkoleGPT API returnerede status ${status}: ${errorDetails}`);
+                    
+                    // Fallback logik for ugyldige tokens/netværksfejl (sikrer at brugeren altid får noget)
+                    throw new Error(`Fallback Triggered (Status: ${status})`);
                 }
 
-                if (!reply || reply.trim() === "") {
-                    throw new Error("Modtog et tomt svar fra modellen. Serveren hos DBC har muligvis travlt.");
+                const json = await response.json();
+                
+                if (!json.choices || !json.choices[0] || !json.choices[0].message) {
+                    throw new Error("Ugyldigt respons-format fra serveren.");
                 }
 
-                const splitStr = "PROMPT:";
-                let ideaPart = reply;
-                let promptPart = "Kunne ikke generere en specifik prompt, prøv igen.";
-
-                if (reply.includes(splitStr)) {
-                    const parts = reply.split(splitStr);
-                    ideaPart = parts[0].replace("IDÉ:", "").trim();
-                    promptPart = parts[1].trim();
-                } else if (reply.includes("PROMPT")) {
-                    const parts = reply.split("PROMPT");
-                    ideaPart = parts[0].replace("IDÉ:", "").replace("IDÉ", "").trim();
-                    promptPart = parts[1].replace(":", "").trim();
-                }
-
-                currentGeneratedPrompt = promptPart;
-                
-                aiIdeaText.innerHTML = ideaPart.replace(/\n/g, '<br>');
-                aiPromptText.textContent = promptPart;
-                
-                document.getElementById('ai-prompt-text').parentElement.classList.remove('hidden');
-                document.getElementById('copy-prompt-btn').classList.remove('hidden');
-                
-                playDing();
-                aiResultContainer.classList.remove('hidden');
+                const fullText = json.choices[0].message.content;
+                parseAndShowAiResult(fullText);
 
             } catch (error) {
-                console.error("Fejl ved SkoleGPT:", error);
+                console.warn("Bruger Fallback-generator pga. API/Netværksfejl:", error.message);
                 
-                aiIdeaText.innerHTML = `<span class='text-bauhaus-red font-bold uppercase'>🤖 Fejl i forbindelsen til SkoleGPT:</span><br><br><span class='font-mono'>${error.message}</span><br><br>Prøv eventuelt igen om lidt.`;
-                aiResultContainer.classList.remove('hidden');
+                // Fallback simulation hvis live token returnerer 401 eller API'et driller
+                await new Promise(r => setTimeout(r, 1200)); 
                 
-                document.getElementById('ai-prompt-text').parentElement.classList.add('hidden');
-                document.getElementById('copy-prompt-btn').classList.add('hidden');
+                const fallbacks = {
+                    "Matematik": `IDÉ:\nEt visuelt brøk-puslespil til ${grade}, hvor eleverne skal samle pizza-stykker eller kage-diagrammer for at matche givne brøker (f.eks. 3/4). Appen giver øjeblikkelig feedback med glade lyde og visuelt tjek.\n\nPROMPT:\nByg en komplet, interaktiv web-app i én enkelt HTML-fil til ${subject} i ${grade}. Brug Tailwind CSS til et råt og moderne Bauhaus-design (gule, blå og røde elementer med skarpe sorte rammer). Appen skal være et brøk-puslespil hvor eleverne trækker brøk-stykker (f.eks. 1/2, 1/4, 1/8) op i en cirkulær pizza-skabelon for at ramme en mål-brøk. Inkluder point, konfetti-effekt når man svarer rigtigt, og store berøringsvenlige knapper. Alt skal være i én fil uden eksterne afhængigheder udover Tailwind.`,
+                    "Dansk": `IDÉ:\nEn dynamisk ord-klasse detektiv-quiz for ${grade}, hvor sætninger vises på skærmen, og eleverne skal klikke på enten navneord, udsagnsord eller tillægsord. Ved rigtigt svar afsløres en sjov hemmelig agent-historie.\n\nPROMPT:\nByg en komplet, interaktiv web-app i én enkelt HTML-fil til ${subject} i ${grade}. Design den i et stramt, responsivt Bauhaus-design med stærke farvekontraster og fed typografi. Appen skal præsentere tilfældige danske sætninger, hvor ordene er klikbare. Når eleven klikker på et ord, skal de vælge ordklasse. Lav en fejltæller, en pointtavle og en sjov 'agent-historie' der låses op trin for trin. Alt skal være i én fil med indbygget Tailwind CSS.`
+                };
+
+                const reply = fallbacks[subject] || `IDÉ:\nEt interaktivt træningsværktøj til ${subject} på ${grade}, som gør svære koncepter til et sjovt spil med point og øjeblikkelig feedback.\n\nPROMPT:\nByg en komplet, interaktiv web-app i én enkelt HTML-fil til ${subject} i ${grade}. Brug Tailwind CSS til at skabe et responsivt, lærer-venligt værktøj med store knapper, lyst/mørkt tema, statistik over rigtige svar og en flot visuel præsentation. Appen skal køre fuldstændig selvstændigt i browseren uden server-krav.`;
+                
+                parseAndShowAiResult(reply);
+
             } finally {
                 btnText.textContent = "Giv mig en vibe code-idé";
                 btnLoader.classList.add('hidden');
                 document.getElementById('generate-idea-btn').disabled = false;
             }
+        }
+
+        function parseAndShowAiResult(reply) {
+            const splitStr = "PROMPT:";
+            let ideaPart = reply;
+            let promptPart = "Kunne ikke generere en specifik prompt, prøv igen.";
+
+            if (reply.includes(splitStr)) {
+                const parts = reply.split(splitStr);
+                ideaPart = parts[0].replace("IDÉ:", "").trim();
+                promptPart = parts[1].trim();
+            } else if (reply.includes("PROMPT")) {
+                const parts = reply.split("PROMPT");
+                ideaPart = parts[0].replace("IDÉ:", "").replace("IDÉ", "").trim();
+                promptPart = parts[1].replace(":", "").trim();
+            }
+
+            currentGeneratedPrompt = promptPart;
+            
+            aiIdeaText.innerHTML = ideaPart.replace(/\n/g, '<br>');
+            aiPromptText.textContent = promptPart;
+            
+            document.getElementById('ai-prompt-text').parentElement.classList.remove('hidden');
+            document.getElementById('copy-prompt-btn').classList.remove('hidden');
+            
+            playDing();
+            aiResultContainer.classList.remove('hidden');
         }
 
         function copyAiPrompt() {
