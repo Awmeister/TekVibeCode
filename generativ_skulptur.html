@@ -323,6 +323,10 @@
         // ==========================================
         // 4. WEB BLUETOOTH (micro:bit)
         // ==========================================
+        
+        // Hjælpefunktion til at skabe en lille pause (løser Windows GATT timeouts)
+        const sleep = ms => new Promise(r => setTimeout(r, ms));
+
         async function connectBluetooth() {
             if (!navigator.bluetooth) {
                 updateStatus(false, false, "Bluetooth ikke tilgængelig. Brug Simulation.");
@@ -344,7 +348,26 @@
                 });
 
                 statusText.innerText = "Forbinder til GATT-server...";
-                const server = await device.gatt.connect();
+                
+                // --- FIX FOR WINDOWS/EDGE GATT CONNECTION ISSUE ---
+                // Giver Windows tid til at lukke parringsvinduet og stabilisere Bluetooth-chippen
+                await sleep(500); 
+
+                let server;
+                let retries = 3;
+                while (retries > 0) {
+                    try {
+                        server = await device.gatt.connect();
+                        break; // Succes! Bryd ud af loopet
+                    } catch (err) {
+                        retries--;
+                        console.warn(`GATT forbindelse fejlede. Forsøg tilbage: ${retries}`, err);
+                        if (retries === 0) throw err; // Kast fejlen videre, hvis vi løber tør for forsøg
+                        statusText.innerText = `Forbinder... (Forsøg ${4-retries}/3)`;
+                        await sleep(1000); // Vent et sekund før vi prøver igen
+                    }
+                }
+                // --------------------------------------------------
 
                 statusText.innerText = "Henter tjenester...";
                 const service = await server.getPrimaryService(BT_SERVICES.ACCEL_SERVICE);
@@ -363,10 +386,16 @@
 
             } catch (error) {
                 console.error("Bluetooth fejl:", error);
+                
+                // Forbedret fejlhåndtering
                 if (error.name === "NotFoundError") {
-                    updateStatus(false, false, "Ingen enhed valgt.");
+                    updateStatus(false, false, "Ingen enhed valgt. Tjek 'No Pairing Required' på micro:bit.");
+                } else if (error.message && error.message.includes("User cancelled")) {
+                    updateStatus(false, false, "Forbindelse afbrudt. Prøv at vælge enheden igen.");
                 } else if (error.name === "SecurityError" || error.message.includes("permissions policy")) {
                     updateStatus(false, false, "Bluetooth blokeret her. Åbn filen i ny fane, eller brug Simulation.");
+                } else if (error.name === "NetworkError") {
+                    updateStatus(false, false, "Forbindelsesfejl. Er Bluetooth tændt på din PC?");
                 } else {
                     updateStatus(false, false, "Fejl: " + error.message);
                 }
