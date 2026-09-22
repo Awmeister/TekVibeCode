@@ -144,7 +144,7 @@
 
     <div id="ui-layer">
         <div class="panel">
-            <h1>Synæstesi i bevægelse V6</h1>
+            <h1>Synæstesi i bevægelse V7</h1>
             <p>Forbind din BBC micro:bit for at interagere med skulpturen og lyden via accelerometeret.</p>
             
             <button id="btn-connect">Forbind micro:bit</button>
@@ -162,7 +162,7 @@
     <script type="module">
         import * as THREE from 'three';
 
-        // ==========================================
+        //        // ==========================================
         // 1. STATE & GLOBALS
         // ==========================================
         const state = {
@@ -190,7 +190,7 @@
         const statusDot = document.getElementById('status-dot');
         const debugData = document.getElementById('debug-data');
 
-        // ==========================================
+        //        // ==========================================
         // 2. AUDIO SYNTHESIS (Tone.js)
         // ==========================================
         const audioNodes = {};
@@ -254,7 +254,7 @@
         // Pentatonic Scale for generative melodies based on tilt
         const scale = ["C2", "Eb2", "F2", "G2", "Bb2", "C3", "Eb3", "F3", "G3", "Bb3", "C4"];
 
-        // ==========================================
+        //        // ==========================================
         // 3. 3D VISUALS (Three.js)
         // ==========================================
         const container = document.getElementById('canvas-container');
@@ -320,7 +320,7 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        // ==========================================
+        //        // ==========================================
         // 4. WEB BLUETOOTH (micro:bit)
         // ==========================================
         
@@ -397,7 +397,7 @@
             }
         }
 
-        function handleSensorData(event) {
+        //        function handleSensorData(event) {
             const dataView = event.target.value;
             // micro:bit sends 3 x 16-bit signed int (Little Endian)
             // Values are typically roughly -1024 to 1024 (representing 1g)
@@ -415,7 +415,7 @@
             debugData.innerText = `X: ${state.rawAccel.x.toFixed(2)} | Y: ${state.rawAccel.y.toFixed(2)} | Z: ${state.rawAccel.z.toFixed(2)}`;
         }
 
-        // ==========================================
+        //        // ==========================================
         // 5. MOUSE FALLBACK (Simulation)
         // ==========================================
         function enableSimulation() {
@@ -458,7 +458,7 @@
         btnConnect.addEventListener('click', connectBluetooth);
         btnSimulate.addEventListener('click', enableSimulation);
 
-        // ==========================================
+        //        // ==========================================
         // 6. RENDER & UPDATE LOOP
         // ==========================================
         const clock = new THREE.Clock();
