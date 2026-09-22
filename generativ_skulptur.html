@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Ambient micro:bit Skulptur</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #050508;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: #ffffff;
+            user-select: none;
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            pointer-events: none; /* Let clicks pass through empty space */
+        }
+
+        .panel {
+            background: rgba(20, 20, 30, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            pointer-events: auto;
+            max-width: 300px;
+            transition: all 0.3s ease;
+        }
+
+        h1 {
+            margin: 0 0 10px 0;
+            font-size: 1.2rem;
+            font-weight: 400;
+            letter-spacing: 1px;
+            color: #e0e0ff;
+        }
+
+        p {
+            margin: 0 0 20px 0;
+            font-size: 0.85rem;
+            color: #999;
+            line-height: 1.4;
+        }
+
+        button {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 10px;
+            transition: transform 0.1s, box-shadow 0.2s, background 0.3s;
+            box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(124, 58, 237, 0.5);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        button.secondary {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: none;
+        }
+        
+        button.secondary:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        #status {
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 5px;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #f43f5e; /* Red/Disconnected */
+            transition: background-color 0.3s;
+            box-shadow: 0 0 8px currentColor;
+        }
+        
+        .dot.connected { background-color: #10b981; } /* Green */
+        .dot.simulating { background-color: #3b82f6; } /* Blue */
+
+        #debug-data {
+            font-family: monospace;
+            font-size: 0.75rem;
+            color: #666;
+            margin-top: 15px;
+            display: none;
+        }
+    </style>
+
+    <!-- We use a script tag for Tone.js as it plays safest with single-file setups -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    
+    <!-- Import map for Three.js ES Modules -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="ui-layer">
+        <div class="panel">
+            <h1>Synæstesi i bevægelse</h1>
+            <p>Forbind din BBC micro:bit for at interagere med skulpturen og lyden via accelerometeret.</p>
+            
+            <button id="btn-connect">Forbind micro:bit</button>
+            <button id="btn-simulate" class="secondary">Brug mus (Simulation)</button>
+            
+            <div id="status">
+                <div id="status-dot" class="dot"></div>
+                <span id="status-text">Afventer forbindelse...</span>
+            </div>
+            
+            <div id="debug-data">X: 0.00 | Y: 0.00 | Z: 0.00</div>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+
+        // ==========================================
+        // 1. STATE & GLOBALS
+        // ==========================================
+        const state = {
+            rawAccel: { x: 0, y: 0, z: 0 },
+            smoothAccel: { x: 0, y: 0, z: 0 },
+            lastZ: 0,
+            isConnected: false,
+            isSimulating: false,
+            audioInitialized: false,
+            shakeIntensity: 0,
+            currentNoteIndex: -1
+        };
+
+        // Bluetooth UUIDs for standard BBC micro:bit Accelerometer Service
+        const BT_SERVICES = {
+            ACCEL_SERVICE: "e95d0753-251d-470a-a062-fa1922dfa9a8",
+            ACCEL_DATA: "e95dca46-251d-470a-a062-fa1922dfa9a8",
+            ACCEL_PERIOD: "e95dfb24-251d-470a-a062-fa1922dfa9a8"
+        };
+
+        // UI Elements
+        const btnConnect = document.getElementById('btn-connect');
+        const btnSimulate = document.getElementById('btn-simulate');
+        const statusText = document.getElementById('status-text');
+        const statusDot = document.getElementById('status-dot');
+        const debugData = document.getElementById('debug-data');
+
+        // ==========================================
+        // 2. AUDIO SYNTHESIS (Tone.js)
+        // ==========================================
+        const audioNodes = {};
+
+        async function initAudio() {
+            if (state.audioInitialized) return;
+            
+            await Tone.start();
+            
+            // Master Effects Chain
+            audioNodes.reverb = new Tone.Reverb({
+                decay: 8,
+                preDelay: 0.1,
+                wet: 0.6
+            }).toDestination();
+            await audioNodes.reverb.generate(); // Pre-calculate reverb impulse
+
+            audioNodes.delay = new Tone.PingPongDelay("4n.", 0.4).connect(audioNodes.reverb);
+            
+            audioNodes.filter = new Tone.Filter({
+                type: "lowpass",
+                frequency: 1000,
+                rolloff: -24,
+                Q: 2
+            }).connect(audioNodes.delay);
+
+            // Ambient Drone Synth (Continuous sound)
+            audioNodes.drone = new Tone.FMSynth({
+                harmonicity: 1.5,
+                modulationIndex: 3.5,
+                oscillator: { type: "sine" },
+                modulation: { type: "triangle" },
+                envelope: {
+                    attack: 2,
+                    decay: 0.5,
+                    sustain: 1,
+                    release: 4
+                }
+            }).connect(audioNodes.filter);
+            audioNodes.drone.volume.value = -12;
+
+            // Chime Synth (For shakes/spikes)
+            audioNodes.chimes = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: "sine" },
+                envelope: {
+                    attack: 0.01,
+                    decay: 0.3,
+                    sustain: 0.2,
+                    release: 3
+                }
+            }).connect(audioNodes.reverb);
+            audioNodes.chimes.volume.value = -8;
+
+            // Start base drone note softly
+            audioNodes.drone.triggerAttack("C3");
+            
+            state.audioInitialized = true;
+            console.log("Audio Engine Started");
+        }
+
+        // Pentatonic Scale for generative melodies based on tilt
+        const scale = ["C2", "Eb2", "F2", "G2", "Bb2", "C3", "Eb3", "F3", "G3", "Bb3", "C4"];
+
+        // ==========================================
+        // 3. 3D VISUALS (Three.js)
+        // ==========================================
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x050508, 0.05);
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.z = 8;
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 2);
+        dirLight.position.set(5, 5, 5);
+        scene.add(dirLight);
+
+        const colorLight1 = new THREE.PointLight(0x4f46e5, 5, 20); // Indigo
+        colorLight1.position.set(-5, 0, 5);
+        scene.add(colorLight1);
+
+        const colorLight2 = new THREE.PointLight(0xf43f5e, 5, 20); // Rose
+        colorLight2.position.set(5, -5, 2);
+        scene.add(colorLight2);
+
+        // Geometry & Material (Organic, glass-like)
+        const baseRadius = 2.5;
+        // High detail is required for smooth vertex deformation
+        const geometry = new THREE.IcosahedronGeometry(baseRadius, 32); 
+        
+        // Store original positions for deformation math
+        geometry.setAttribute('originalPosition', new THREE.BufferAttribute(new Float32Array(geometry.attributes.position.array), 3));
+
+        const material = new THREE.MeshPhysicalMaterial({
+            color: 0xffffff,
+            metalness: 0.1,
+            roughness: 0.2,
+            transmission: 0.9, // Glass effect
+            thickness: 1.5,
+            ior: 1.4,
+            wireframe: false,
+            side: THREE.DoubleSide
+        });
+
+        // Add an inner wireframe structure for depth
+        const wireMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.05 });
+        const wireMesh = new THREE.Mesh(geometry, wireMaterial);
+        wireMesh.scale.set(0.98, 0.98, 0.98);
+
+        const mesh = new THREE.Mesh(geometry, material);
+        scene.add(mesh);
+        scene.add(wireMesh);
+
+        // Window resize handler
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // ==========================================
+        // 4. WEB BLUETOOTH (micro:bit)
+        // ==========================================
+        async function connectBluetooth() {
+            if (!navigator.bluetooth) {
+                updateStatus(false, false, "Bluetooth ikke tilgængelig. Brug Simulation.");
+                return;
+            }
+
+            try {
+                await initAudio(); // Must be called on user gesture
+                
+                statusText.innerText = "Søger efter micro:bit...";
+                
+                const device = await navigator.bluetooth.requestDevice({
+                    filters: [{ namePrefix: "BBC micro:bit" }],
+                    optionalServices: [BT_SERVICES.ACCEL_SERVICE]
+                });
+
+                device.addEventListener('gattserverdisconnected', () => {
+                    updateStatus(false, false, "Forbindelse mistet. Prøv igen.");
+                });
+
+                statusText.innerText = "Forbinder til GATT-server...";
+                const server = await device.gatt.connect();
+
+                statusText.innerText = "Henter tjenester...";
+                const service = await server.getPrimaryService(BT_SERVICES.ACCEL_SERVICE);
+
+                // Set update period to ~20ms (fast)
+                const periodChar = await service.getCharacteristic(BT_SERVICES.ACCEL_PERIOD);
+                await periodChar.writeValue(new Uint16Array([20])); 
+
+                // Subscribe to data
+                const dataChar = await service.getCharacteristic(BT_SERVICES.ACCEL_DATA);
+                await dataChar.startNotifications();
+                dataChar.addEventListener('characteristicvaluechanged', handleSensorData);
+
+                updateStatus(true, false, "Bluetooth forbundet!");
+                debugData.style.display = "block";
+
+            } catch (error) {
+                console.error("Bluetooth fejl:", error);
+                if (error.name === "NotFoundError") {
+                    updateStatus(false, false, "Ingen enhed valgt.");
+                } else if (error.name === "SecurityError" || error.message.includes("permissions policy")) {
+                    updateStatus(false, false, "Bluetooth blokeret her. Åbn filen i ny fane, eller brug Simulation.");
+                } else {
+                    updateStatus(false, false, "Fejl: " + error.message);
+                }
+            }
+        }
+
+        function handleSensorData(event) {
+            const dataView = event.target.value;
+            // micro:bit sends 3 x 16-bit signed int (Little Endian)
+            // Values are typically roughly -1024 to 1024 (representing 1g)
+            let x = dataView.getInt16(0, true) / 1024.0;
+            let y = dataView.getInt16(2, true) / 1024.0;
+            let z = dataView.getInt16(4, true) / 1024.0;
+
+            // Clamp and update raw state
+            state.rawAccel = {
+                x: Math.max(-1.5, Math.min(1.5, x)),
+                y: Math.max(-1.5, Math.min(1.5, y)),
+                z: Math.max(-1.5, Math.min(1.5, z))
+            };
+            
+            debugData.innerText = `X: ${state.rawAccel.x.toFixed(2)} | Y: ${state.rawAccel.y.toFixed(2)} | Z: ${state.rawAccel.z.toFixed(2)}`;
+        }
+
+        // ==========================================
+        // 5. MOUSE FALLBACK (Simulation)
+        // ==========================================
+        function enableSimulation() {
+            initAudio();
+            updateStatus(false, true, "Simulation aktiv (Mus)");
+            
+            window.addEventListener('mousemove', (e) => {
+                if(!state.isSimulating) return;
+                
+                // Map mouse position to -1 to 1
+                const mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+                const mouseY = -(e.clientY / window.innerHeight) * 2 + 1; // Invert Y
+                
+                state.rawAccel.x = mouseX;
+                state.rawAccel.y = mouseY;
+                
+                // Simulate Z axis "shake" based on mouse speed
+                const speed = Math.abs(e.movementX) + Math.abs(e.movementY);
+                if (speed > 50) {
+                    state.rawAccel.z = speed / 100;
+                } else {
+                    state.rawAccel.z *= 0.9; // decay
+                }
+            });
+        }
+
+        function updateStatus(connected, simulating, text) {
+            state.isConnected = connected;
+            state.isSimulating = simulating;
+            
+            statusText.innerText = text;
+            statusDot.className = 'dot';
+            if (connected) statusDot.classList.add('connected');
+            if (simulating) statusDot.classList.add('simulating');
+            
+            btnConnect.style.display = (connected || simulating) ? 'none' : 'block';
+            btnSimulate.style.display = (connected || simulating) ? 'none' : 'block';
+        }
+
+        btnConnect.addEventListener('click', connectBluetooth);
+        btnSimulate.addEventListener('click', enableSimulation);
+
+        // ==========================================
+        // 6. RENDER & UPDATE LOOP
+        // ==========================================
+        const clock = new THREE.Clock();
+
+        function updateAudio() {
+            if (!state.audioInitialized) return;
+
+            // Filter Cutoff mapping (X-axis tilt -> 200Hz to 3000Hz)
+            const baseFreq = 200;
+            const targetFreq = baseFreq + Math.max(0, (state.smoothAccel.x + 1) / 2) * 2800;
+            // Ramp smoothly
+            audioNodes.filter.frequency.rampTo(targetFreq, 0.1);
+
+            // Pitch/Melody mapping (Y-axis tilt -> Pentatonic Scale)
+            // Map Y (-1 to 1) to array index (0 to scale.length-1)
+            let yVal = Math.max(-1, Math.min(1, state.smoothAccel.y));
+            let index = Math.floor(((yVal + 1) / 2) * (scale.length - 1));
+            
+            if (index !== state.currentNoteIndex) {
+                state.currentNoteIndex = index;
+                // Add portamento (glide) for smooth transitions
+                audioNodes.drone.frequency.rampTo(scale[index], 0.5);
+            }
+
+            // Chime triggering (Z-axis shake/spike)
+            let deltaZ = Math.abs(state.smoothAccel.z - state.lastZ);
+            if (deltaZ > 0.15) {
+                // Play random chime from scale
+                let randomNote = scale[Math.floor(Math.random() * scale.length)];
+                // Play note an octave higher
+                let octaveUp = randomNote.substring(0, randomNote.length-1) + (parseInt(randomNote.slice(-1)) + 1);
+                audioNodes.chimes.triggerAttackRelease(octaveUp, "8n", Tone.now(), Math.min(1, deltaZ * 2));
+            }
+            state.lastZ = state.smoothAccel.z;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const time = clock.getElapsedTime();
+
+            // 1. LERP Data for smooth transitions
+            const lerpFactor = 0.08;
+            state.smoothAccel.x += (state.rawAccel.x - state.smoothAccel.x) * lerpFactor;
+            state.smoothAccel.y += (state.rawAccel.y - state.smoothAccel.y) * lerpFactor;
+            state.smoothAccel.z += (state.rawAccel.z - state.smoothAccel.z) * lerpFactor;
+
+            // Calculate overall movement magnitude (G-Force approx minus gravity)
+            const magnitude = Math.sqrt(
+                Math.pow(state.smoothAccel.x, 2) + 
+                Math.pow(state.smoothAccel.y, 2) + 
+                Math.pow(state.smoothAccel.z, 2)
+            );
+            
+            // 2. Animate 3D Object Rotation
+            // X tilt rotates around Z axis, Y tilt rotates around X axis
+            mesh.rotation.z = -state.smoothAccel.x * Math.PI;
+            mesh.rotation.x = state.smoothAccel.y * Math.PI;
+            
+            // Slow idle rotation
+            mesh.rotation.y += 0.002;
+
+            // Sync wireframe
+            wireMesh.rotation.copy(mesh.rotation);
+
+            // 3. Dynamic Color Modulation based on tilt
+            // HSL: Hue influenced by X/Y, Saturation high, Lightness dynamic
+            const hue = (state.smoothAccel.x + 1.0) / 2.0; // 0.0 to 1.0
+            colorLight1.color.setHSL(hue, 0.8, 0.5);
+            colorLight2.color.setHSL((hue + 0.5) % 1.0, 0.8, 0.5); // Complementary
+
+            // 4. Vertex Deformation (Generative organic shape)
+            const positions = geometry.attributes.position;
+            const original = geometry.attributes.originalPosition;
+            
+            // Base deformation factor + acceleration boost
+            let deformationBase = 0.2;
+            let deformationBoost = magnitude * 0.5; 
+            let totalDeformation = deformationBase + deformationBoost;
+            
+            // Speed of the fluid motion
+            let speed = time * 1.5;
+
+            for (let i = 0; i < positions.count; i++) {
+                // Get original vertex position
+                let vx = original.getX(i);
+                let vy = original.getY(i);
+                let vz = original.getZ(i);
+
+                // Math formula for organic 3D "noise" waves
+                // Combining sines and cosines based on spatial coordinates
+                let freq = 1.2;
+                let offset = Math.sin(vx * freq + speed) * 
+                             Math.cos(vy * freq + speed) * 
+                             Math.sin(vz * freq + speed);
+                
+                // Calculate new position outwards along normal
+                // (Since it's a sphere centered at 0,0,0, original pos is proportional to normal)
+                let scale = 1 + (offset * totalDeformation);
+                
+                positions.setXYZ(i, vx * scale, vy * scale, vz * scale);
+            }
+            
+            // Notify Three.js that vertices changed
+            positions.needsUpdate = true;
+            geometry.computeVertexNormals(); // Fix lighting on new shape
+
+            // 5. Update Audio context parameters
+            updateAudio();
+
+            // 6. Render Scene
+            renderer.render(scene, camera);
+        }
+
+        // Start animation loop
+        animate();
+
+    </script>
+</body>
+</html>
