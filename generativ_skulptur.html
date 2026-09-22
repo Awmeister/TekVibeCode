@@ -144,7 +144,7 @@
 
     <div id="ui-layer">
         <div class="panel">
-            <h1>Synæstesi i bevægelse V5</h1>
+            <h1>Synæstesi i bevægelse V6</h1>
             <p>Forbind din BBC micro:bit for at interagere med skulpturen og lyden via accelerometeret.</p>
             
             <button id="btn-connect">Forbind micro:bit</button>
@@ -338,9 +338,10 @@
                 
                 statusText.innerText = "Søger efter micro:bit...";
                 
-                // V4: Vis alle enheder (fordi micro:bit ikke reklamerer med store UUIDs i luften)
+                // V6: Tilbage til navne-filtrering, da vi nu bruger "Just Works" parring i MakeCode.
+                // Dette er den mest stabile metode, når parring er tilladt.
                 const device = await navigator.bluetooth.requestDevice({
-                    acceptAllDevices: true,
+                    filters: [{ namePrefix: "BBC micro:bit" }],
                     optionalServices: [BT_SERVICES.ACCEL_SERVICE]
                 });
 
@@ -350,8 +351,7 @@
 
                 statusText.innerText = "Forbinder til GATT-server...";
                 
-                // --- FIX FOR WINDOWS/EDGE GATT CONNECTION ISSUE ---
-                // Giver Windows tid til at lukke parringsvinduet og stabilisere Bluetooth-chippen
+                // Giver Windows tid til at stabilisere Bluetooth-chippen efter valg af enhed
                 await sleep(500); 
 
                 let server;
@@ -359,25 +359,22 @@
                 while (retries > 0) {
                     try {
                         server = await device.gatt.connect();
-                        break; // Succes! Bryd ud af loopet
+                        break; // Succes!
                     } catch (err) {
                         retries--;
                         console.warn(`GATT forbindelse fejlede. Forsøg tilbage: ${retries}`, err);
-                        if (retries === 0) throw err; // Kast fejlen videre, hvis vi løber tør for forsøg
+                        if (retries === 0) throw err; 
                         statusText.innerText = `Forbinder... (Forsøg ${4-retries}/3)`;
-                        await sleep(1000); // Vent et sekund før vi prøver igen
+                        await sleep(1000); 
                     }
                 }
-                // --------------------------------------------------
 
                 statusText.innerText = "Henter tjenester...";
                 const service = await server.getPrimaryService(BT_SERVICES.ACCEL_SERVICE);
 
-                // Set update period to ~20ms (fast)
                 const periodChar = await service.getCharacteristic(BT_SERVICES.ACCEL_PERIOD);
                 await periodChar.writeValue(new Uint16Array([20])); 
 
-                // Subscribe to data
                 const dataChar = await service.getCharacteristic(BT_SERVICES.ACCEL_DATA);
                 await dataChar.startNotifications();
                 dataChar.addEventListener('characteristicvaluechanged', handleSensorData);
@@ -388,15 +385,12 @@
             } catch (error) {
                 console.error("Bluetooth fejl:", error);
                 
-                // Forbedret fejlhåndtering
-                if (error.name === "NotFoundError") {
-                    updateStatus(false, false, "Ingen enhed valgt. Tjek 'No Pairing Required' på micro:bit.");
-                } else if (error.message && error.message.includes("User cancelled")) {
-                    updateStatus(false, false, "Forbindelse afbrudt. Prøv at vælge enheden igen.");
-                } else if (error.name === "SecurityError" || error.message.includes("permissions policy")) {
-                    updateStatus(false, false, "Bluetooth blokeret her. Åbn filen i ny fane, eller brug Simulation.");
+                if (error.name === "NotFoundError" || error.message.includes("cancelled")) {
+                    updateStatus(false, false, "Ingen enhed valgt. Tjek at den er tændt og parret i Windows.");
+                } else if (error.name === "SecurityError") {
+                    updateStatus(false, false, "Bluetooth blokeret her. Kør filen lokalt eller via localhost.");
                 } else if (error.name === "NetworkError") {
-                    updateStatus(false, false, "Forbindelsesfejl. Er Bluetooth tændt på din PC?");
+                    updateStatus(false, false, "Netværksfejl (GATT). Prøv at genstarte micro:bit.");
                 } else {
                     updateStatus(false, false, "Fejl: " + error.message);
                 }
