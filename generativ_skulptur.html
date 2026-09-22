@@ -144,7 +144,7 @@
 
     <div id="ui-layer">
         <div class="panel">
-            <h1>Synæstesi i bevægelse V3</h1>
+            <h1>Synæstesi i bevægelse V4</h1>
             <p>Forbind din BBC micro:bit for at interagere med skulpturen og lyden via accelerometeret.</p>
             
             <button id="btn-connect">Forbind micro:bit</button>
@@ -338,11 +338,12 @@
                 
                 statusText.innerText = "Søger efter micro:bit...";
                 
-                // ÆNDRING HER: Vi fjerner namePrefix og tillader alle enheder, 
-                // så browseren ikke blokerer valget.
+                // V3: Stram filtrering KUN på den specifikke service. 
+                // Dette tvinger browseren til at lytte efter live-signaler og ignorere navne.
                 const device = await navigator.bluetooth.requestDevice({
-                    acceptAllDevices: true,
-                    optionalServices: [BT_SERVICES.ACCEL_SERVICE]
+                    filters: [{
+                        services: [BT_SERVICES.ACCEL_SERVICE]
+                    }]
                 });
 
                 device.addEventListener('gattserverdisconnected', () => {
